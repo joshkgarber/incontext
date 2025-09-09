@@ -5,6 +5,11 @@ VALUES
   ("admin2", "scrypt:32768:8:1$huAZd2BbgeBRZ1C6$780368ac6f62cfd8fa4c4505430d48f4a8366fcfda4c14797acd011691176a13ea7c5c6671f8d04793f430a86a54a26d3a49c624d62d9d4210608a70cb0151da", 1);
 
 
+INSERT INTO contexts (name, description, creator_id, created)
+VALUES
+	('test name', 'test' || x'0a' || 'description', 2, '2025-01-01 00:00:00');			
+
+
 INSERT INTO master_lists (creator_id, name, description)
 VALUES
     (2, "master list name 1", "master list description 1"),

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block header %}
+	<h1>{% block title %}Contexts{% endblock %}</h1>
+	{% if g.user %}
+		<a href="{{ url_for('contexts.create') }}">New</a>
+	{% endif %}
+{% endblock %}
+
+{% block main %}
+	{% for context in contexts %}
+	<article class="context">
+		<header>
+			<h2>{{ context['name'] }}</h2>
+		</header>
+		<p>{{ context['description'] }}</p>
+		<footer>
+			<p>Created: {{ context['created'].strftime('%d.%m.%Y') }} | Creator: {{ context['username'] }}{% if g.user['id'] == context['creator_id'] %} | <a href="{{ url_for('contexts.update', id=context['id']) }}">Edit</a>{% endif %}</p>
+		</footer>
+	</article>
+		{% if not loop.last %}
+			<hr>
+		{% endif %}
+	{% endfor %}
+{% endblock %}

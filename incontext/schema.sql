@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS contexts;
 DROP TABLE IF EXISTS master_lists;
 DROP TABLE IF EXISTS master_items;
 DROP TABLE IF EXISTS master_details;
@@ -24,6 +25,16 @@ CREATE TABLE users (
 	username TEXT UNIQUE NOT NULL,
 	password TEXT NOT NULL,
     admin BOOL NOT NULL DEFAULT 0
+);
+
+
+CREATE TABLE contexts (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	creator_id INTEGER NOT NULL,
+	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	name TEXT NOT NULL,
+	description TEXT NOT NULL,
+	FOREIGN KEY (creator_id) REFERENCES users (id)
 );
 
 

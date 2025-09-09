@@ -14,6 +14,7 @@
 				<span class="brand"><a href="{{ url_for('home.index') }}">InContext</a></span>
 				{% if g.user %}
 				<ul>
+					<li><span><a href="{{ url_for('contexts.index') }}">Contexts</a></li>
                     {% if g.user["admin"] %}
 					<li><span><a href="{{ url_for('master_lists.index') }}">Master Lists</a></li>
 					<li><span><a href="{{ url_for('master_agents.index') }}">Master Agents</a></li>
