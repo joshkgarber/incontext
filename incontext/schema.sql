@@ -38,6 +38,28 @@ CREATE TABLE contexts (
 );
 
 
+CREATE TABLE context_list_relations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    creator_id INTEGER NOT NULL,
+    context_id INTEGER NOT NULL,
+    list_id INTEGER NOT NULL,
+    FOREIGN KEY (creator_id) REFERENCES users (id)
+    FOREIGN KEY (context_id) REFERENCES contexts (id)
+    FOREIGN KEY (list_id) REFERENCES lists (id)
+);
+
+
+CREATE TABLE context_agent_relations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    creator_id INTEGER NOT NULL,
+    context_id INTEGER NOT NULL,
+    agent_id INTEGER NOT NULL,
+    FOREIGN KEY (creator_id) REFERENCES users (id)
+    FOREIGN KEY (context_id) REFERENCES contexts (id)
+    FOREIGN KEY (agent_id) REFERENCES lists (id)
+);
+
+
 CREATE TABLE master_lists (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	creator_id INTEGER NOT NULL,

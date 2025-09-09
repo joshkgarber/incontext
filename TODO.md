@@ -2,7 +2,7 @@
 
 - [x] Merge just-contexts with masters-with-lists-and-agents
 - [x] Define user stories
-- [ ] Update the schema
+- [x] Update the schema
 - [ ] Write the user stories and tests along with them as you go.
 
 ## User stories
