@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Agent: {{ agent['name'] }}{% endblock %}</h1>
+<p>{{ agent['description'] }} <a href="{{ url_for('agents.edit', agent_id=agent['id']) }}">Edit</a></p>
+<p><b>Created:</b> {{ agent['created'].strftime('%d.%m.%Y') }}</p>
+{% endblock %}
+{% block main %}
+	<h2>Attributes</h2>
+	<ul>
+		<li><b>Creator: </b>{{ agent['username'] }}</li>
+		<li><b>Name: </b>{{ agent['name'] }}</li>
+		<li><b>Model: </b>{{ agent['model_name'] }}</li>
+		<li><b>Provider: </b>{{ agent["provider_name"] }}</li>
+		<li><b>Role: </b>{{ agent['role'] }}</li>
+		<li><b>Instructions: </b>{{ agent["instructions"] }}</li>
+	</ul>
+{% endblock %}

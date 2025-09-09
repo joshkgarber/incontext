@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Edit Agent: {{ agent['name'] }}{% endblock %}</h1>
+<p><b>Created:</b> {{ agent["created"].strftime("%d.%m.%Y") }}</p>
+{% endblock %}
+	
+{% block main %}
+<form method="post">
+	<label for="name">Name
+		<input id="name" name="name" value="{{ request.form['name'] or agent['name'] }}" autofocus required>
+	</label>
+	<label for="description">Description
+		<textarea id="description" name="description">{{ request.form['description'] or agent['description'] }}</textarea>
+	</label>
+	<label for="model">Model
+		<select name="model_id" id="model" required autofocus>
+			{% for agent_model in agent_models %}
+			<option value="{{ agent_model["id"] }}">{{ agent_model["model_name"] }}</option>
+			{% endfor %}
+		</select>
+	</label>
+	<label for="role">Role
+		<input id="role" name="role" value="{{ request.form['role'] or agent['role'] }}" autofocus required>
+	</label>
+	<label for="instructions">Instructions
+		<textarea id="instructions" name="instructions" required>{{ request.form['instructions'] or agent['instructions'] }}</textarea>
+	</label>
+	<input type="submit" value="Save">
+</form>
+<hr>
+<form method="post" action="{{ url_for('agents.delete', agent_id=agent['id']) }}">
+	<input type="submit" value="Delete">
+</form>
+<script>
+	const opts = document.querySelectorAll('#model option');
+	opts.forEach((opt) => {
+		if (opt.value == "{{ request.form['model_id'] or agent['model_id'] }}") opt.selected = true;
+	});
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Agents{% endblock %}</h1>
+{% endblock %}
+
+{% block main %}
+{% if agents|length == 0 %}
+<p>Empty</p>
+{% endif %}
+<p><a href="{{ url_for('agents.new') }}">New Agent</a></p>
+<p><a href="{{ url_for('agents.new_tethered') }}">New Tethered Agent</a></p>
+{% for agent in agents %}
+<article>
+	<h3>{{ agent['name'] }}</h3>
+	<p>{{ agent['description'] }}</p>
+	<p><b>Created: </b>{{ agent['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('agents.view', agent_id=agent['id']) }}">View</a> | <a href="{{ url_for('agents.edit', agent_id=agent['id']) }}">Edit</a></p>
+	{% if not loop.last %}
+	<hr>
+	{% endif %}
+</article>
+{% endfor %}
+{% if agents|length > 0 %}
+<hr>
+{% endif %}
+{% for tethered_agent in tethered_agents %}
+<article>
+	<h3>{{ tethered_agent['name'] }} (tethered)</h3>
+	<p>{{ tethered_agent['description'] }}</p>
+    <p><b>Created: </b>{{ tethered_agent['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('master_agents.view', master_agent_id=tethered_agent['master_agent_id']) }}">View Master</a></p>
+    <form method="post" action="{{ url_for('agents.delete_tethered', tethered_agent_id=tethered_agent['id']) }}">
+        <input type="submit" value="Delete">
+    </form>
+	{% if not loop.last %}
+	<hr>
+	{% endif %}
+</article>
+{% endfor %}
+{% endblock %}

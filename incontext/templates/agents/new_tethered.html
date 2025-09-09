@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}New Tethered Agent{% endblock %}</h1>
+{% endblock %}
+
+{% block main %}
+{% if master_agents|length == 0 %}
+<p>No Master Agents</p>
+{% else %}
+{% for master_agent in master_agents %}
+<article>
+	<p><b>{{ master_agent["name"] }}</b></p>
+	<p>{{ master_agent["description"] }}</p>
+	<table>
+		<tr>
+			<th>Model</th>
+			<th>Role</th>
+			<th>Instructions</th>
+		</tr>
+		<tr>
+			<td>{{ master_agent["model_name"] }}</td>
+			<td>{{ master_agent["role"] }}</td>
+			<td>{{ master_agent["instructions"] }}</td>
+		</tr>
+	</table>
+	<form method="post">
+		<input type="hidden" name="master_agent_id" value="{{ master_agent["id"] }}">
+		<input type="submit" value="Choose">
+	</form>
+</article>
+{% if not loop.last %}
+<hr>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endblock %}

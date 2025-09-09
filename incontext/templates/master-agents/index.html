@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Master Agents{% endblock %}</h1>
+{% endblock %}
+
+{% block main %}
+{% if master_agents|length == 0 %}
+<p>Empty</p>
+{% endif %}
+<p><a href="{{ url_for('master_agents.new') }}">New Master Agent</a></p>
+{% for master_agent in master_agents %}
+<article>
+	<h3>{{ master_agent['name'] }}</h3>
+	<p>{{ master_agent['description'] }}</p>
+    <p><b>Created on </b>{{ master_agent['created'].strftime('%d.%m.%Y') }} <b>by</b> {{ master_agent["username"] }} | <a href="{{ url_for('master_agents.view', master_agent_id=master_agent['id']) }}">View</a> | <a href="{{ url_for('master_agents.edit', master_agent_id=master_agent['id']) }}">Edit</a></p>
+	{% if not loop.last %}
+	<hr>
+	{% endif %}
+</article>
+{% endfor %}
+{% endblock %}

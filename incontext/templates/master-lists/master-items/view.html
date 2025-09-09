@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Master Item: {{ master_item['name'] }}{% endblock %}</h1>
+{% endblock %}
+	
+{% block main %}
+<p><a href="{{ url_for('master_lists.edit_master_item', master_list_id=master_list['id'], master_item_id=master_item['id']) }}">Edit</a></p>
+<ul>
+	<li><b>ID</b>: {{ master_item['id'] }}</li>
+	<li><b>Name</b>: {{ master_item['name'] }}</li>
+	<li><b>Created</b>: {{ master_item['created'].strftime('%d.%m.%Y') }}</li>
+	<li><b>Creator</b>: {{ master_item['username'] }}</li>
+	<li><b>Master List</b>: <a href="{{ url_for('master_lists.view', master_list_id=master_list['id']) }}">{{ master_list['name'] }}</a></li>
+</ul>
+{% for master_detail in master_details %}
+<details open>
+	<summary>{{ master_detail['name'] }}</summary>
+	{{ master_item['master_contents'][loop.index0] }}
+</details>
+{% endfor %}
+{% endblock %}
+

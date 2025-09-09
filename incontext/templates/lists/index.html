@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Lists{% endblock %}</h1>
+{% if lists|length == 0 %}
+<p>Empty</p>
+{% endif %}
+<p><a href="{{ url_for('lists.new') }}">New</a></p>
+<p><a href="{{ url_for('lists.new_tethered') }}">New Tethered List</a></p>
+{% endblock %}
+{% block main %}
+{% for alist in lists %}
+<article>
+    <h2>{% if alist["master_list_id"] %}{{ alist["master_list_name"] }} (tethered){% else %}{{ alist['name'] }}{% endif %}</h2>
+    <p>{% if alist["master_list_id"] %}{{ alist["master_list_description"] }} (tethered){% else %}{{ alist['description'] }}{% endif %}</p>
+    <p><b>Created: </b>{{ alist['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('lists.view', list_id=alist['id']) }}">View</a> | <a href="{{ url_for('lists.edit', list_id=alist['id']) }}">Edit</a>{% if alist["master_list_id"] %} | <a href="{{ url_for('master_lists.view', master_list_id=alist['master_list_id']) }}">View Master</a>{% endif %}</p>
+	{% if not loop.last %}
+	<hr>
+	{% endif %}
+</article>
+{% endfor %}
+{% endblock %}

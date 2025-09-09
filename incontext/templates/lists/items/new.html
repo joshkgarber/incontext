@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}New Item - {{ alist['name'] }}{% endblock %}</h1>
+<p>{{ alist['description'] }}</p>
+{% endblock %}
+
+{% block main %}
+<form method="post">
+	<label for="name">Name
+		<input name="name" id="name" value="{{ request.form['name'] }}" autofocus required>
+	</label>
+	{% for detail in details %}
+	<label for="{{ detail['id'] }}">{{ detail['name'] }}
+		<textarea id="{{ detail['id'] }}" name="{{ detail['id'] }}">{{ request.form[detail['id']] }}</textarea>
+	</label>
+	{% endfor %}
+	<input type="submit" value="Save">
+</form>
+{% endblock %}

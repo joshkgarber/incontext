@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block header %}
+	<h1>{% block title %}Edit List: {{ alist['name'] }}{% endblock %}</h1>
+{% endblock %}
+	
+{% block main %}
+<form method="post">
+	<label for="name">Name
+		<input id="name" name="name" value="{{ request.form['name'] or alist['name'] }}" required>
+	</label>
+	<label for="description">Description
+		<textarea id="description" name="description">{{ request.form['description'] or alist['description'] }}</textarea>
+	</label>
+	<input type="submit" value="Save">
+</form>
+<hr>
+<form method="post" action="{{ url_for('lists.delete', list_id=alist['id']) }}">
+	<input type="submit" value="Delete">
+</form>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}{{ item['name'] }}{% endblock %}</h1>
+{% endblock %}
+	
+{% block main %}
+<ul>
+	<li><b>Item ID</b>: {{ item['id'] }}</li>
+	<li><b>Name</b>: {{ item['name'] }}</li>
+	<li><b>Created</b>: {{ item['created'].strftime('%d.%m.%Y') }}</li>
+	<li><b>Creator</b>: {{ item['username'] }}</li>
+	<li><b>List</b>: <a href="{{ url_for('lists.view', list_id=alist['id']) }}">{{ alist['name'] }}</a></li>
+</ul>
+{% for detail in details %}
+<details open>
+	<summary>{{ detail['name'] }}</summary>
+	{{ detail['content'] }}
+</details>
+{% endfor %}
+<p><a href="{{ url_for('lists.edit_item', list_id=alist['id'], item_id=item['id']) }}">Edit</a></p>
+{% endblock %}
+

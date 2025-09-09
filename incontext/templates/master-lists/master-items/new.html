@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}New Master Item - {{ master_list['name'] }}{% endblock %}</h1>
+<p>{{ master_list['description'] }}</p>
+{% endblock %}
+
+{% block main %}
+<form method="post">
+	<label for="name">Name
+		<input name="name" id="name" value="{{ request.form['name'] }}" autofocus required>
+	</label>
+	{% for master_detail in master_list["master_details"] %}
+	<label for="{{ master_detail['id'] }}">{{ master_detail['name'] }}
+		<textarea id="{{ master_detail['id'] }}" name="{{ master_detail['id'] }}">{{ request.form[master_detail['id']] }}</textarea>
+	</label>
+	{% endfor %}
+	<input type="submit" value="Save">
+</form>
+{% endblock %}
