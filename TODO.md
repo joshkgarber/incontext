@@ -13,6 +13,7 @@
     - [x] Name, description, creator and created, related lists and agents
 - [ ] You can add a list to a context (not a master list) if you own the context and you own the list.
     - [ ] There's a button on the context view layout to add a list
+    - [ ] If there are no related lists it says "Empty"
     - [ ] The list name and description are shown in the context.
     - [ ] Once a list has been added there is a button to remove the list
     - [ ] There is a button to view the list
@@ -21,6 +22,7 @@
 - [ ] You can add an agent to a context if you own the context and the agent.
     - [ ] The agent name and description are shown in the context.
     - [ ] There's a button on the context view layout to add an agent
+    - [ ] If there are no related agents it says "Empty"
     - [ ] Once an agent has been added there is a button to remove it.
     - [ ] There is a button to view the agent.
     - [ ] Agent view layouts have links to their related contexts.
