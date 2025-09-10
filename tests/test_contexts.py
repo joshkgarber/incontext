@@ -1,5 +1,7 @@
 import pytest
-from incontext.db import get_db
+from incontext.db import get_db, dict_factory
+from incontext.lists import get_user_lists
+from incontext.contexts import get_unrelated_lists
 
 
 def test_index(client, auth):
@@ -25,7 +27,65 @@ def test_view(client, auth, app):
     auth.login()
     response = client.get("/contexts/1/view")
     assert response.status_code == 200
+    # Shows connected lists and agents
+    assert b"list name 1" in response.data
+    assert b"list name 2" in response.data
+    # Doesn't show other lists
+    assert b"list name 3" not in response.data
+    assert b"list name 5" not in response.data
 
+
+def test_connect_list(client, auth, app):
+    path = "/contexts/1/new-list"
+    # Get requests
+    # Must be logged in and own the context
+    response = client.get(path)
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/auth/login"
+    auth.login("other", "other")
+    response = client.get(path)
+    assert response.status_code == 403
+    with app.app_context():
+        auth.login()
+        response = client.get(path)
+        assert response.status_code == 200
+        # The user's lists are shown (if not already connected)
+        assert b"<h3>list name 1" not in response.data
+        assert b"<h3>list name 2" not in response.data
+        assert b"<h3>list name 3" not in response.data
+        assert b"<h3>list name 4" not in response.data
+        assert b"<h3>master list name 1" in response.data
+        assert b"<h3>master list name 2" not in response.data
+        assert b"<h3>master list name 3" not in response.data
+    # Post requests
+    auth.logout()
+    # Must be logged in and own the context
+    response = client.post(path)
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/auth/login"
+    auth.login("other", "other")
+    response = client.get(path)
+    assert response.status_code == 403
+    auth.login()
+    response = client.get(path)
+    assert response.status_code == 200
+    with app.app_context():
+        db = get_db()
+        db.row_factory = dict_factory
+        context_list_relations_before = db.execute("SELECT * FROM context_list_relations").fetchall()
+        # Must own the list
+        auth.login()
+        data = dict(list_id="3")
+        response = client.post(path, data=data)
+        assert response.status_code == 403
+        # List-context relation gets saved
+        data = dict(list_id="5")
+        response = client.post(path, data=data)
+        context_list_relations_after = db.execute("SELECT * FROM context_list_relations").fetchall()
+        assert len(context_list_relations_after) == len(context_list_relations_before) + 1
+        # Redirected to view context
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/contexts/1/view"
 
 
 @pytest.mark.parametrize('path', (

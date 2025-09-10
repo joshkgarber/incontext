@@ -12,20 +12,23 @@
 - [x] Contexts have a view template
     - [x] Name, description, creator and created, related lists and agents
 - [ ] You can add a list to a context (not a master list) if you own the context and you own the list.
+    - [x] If there are no related lists it says "Empty"
     - [ ] There's a button on the context view layout to add a list
-    - [ ] If there are no related lists it says "Empty"
     - [ ] The list name and description are shown in the context.
     - [ ] Once a list has been added there is a button to remove the list
     - [ ] There is a button to view the list
     - [ ] List view layouts have links to their related contexts.
 - [ ] You can add as many lists as you want.
 - [ ] You can add an agent to a context if you own the context and the agent.
-    - [ ] The agent name and description are shown in the context.
+    - [x] You can't add a tethered agent. For now. I need to fix it so that tethered agents don't have their own table. That means redoing some of how agents works.
+    - [x] If there are no related agents it says "Empty"
     - [ ] There's a button on the context view layout to add an agent
-    - [ ] If there are no related agents it says "Empty"
+    - [ ] The agent name and description are shown in the context.
     - [ ] Once an agent has been added there is a button to remove it.
     - [ ] There is a button to view the agent.
     - [ ] Agent view layouts have links to their related contexts.
 - [ ] You can add as many agents as you want.
 - [ ] Deleting a context will delete its list relations agent relation (if exists)
 - [ ] Contexts uses "new" and "edit" nomenclature not "create" and "update"
+- [ ] Optimization:Sanitize user lists (lists.py::get_user_lists()) such that master list names are replaced immediately, and not later in the route function. 
+    - [ ] Affects lists/index layout and contexts/new_list layout and maybe others

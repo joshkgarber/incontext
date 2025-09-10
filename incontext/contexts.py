@@ -4,7 +4,9 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from incontext.auth import login_required
-from incontext.db import get_db
+from incontext.db import get_db, dict_factory
+from incontext.lists import get_user_lists, get_list
+from incontext.agents import get_agents
 
 bp = Blueprint('contexts', __name__, url_prefix='/contexts')
 
@@ -53,24 +55,7 @@ def view(context_id):
     context = get_context(context_id)
     lists = get_context_lists(context_id)
     agents = get_context_agents(context_id)
-    return render_template("contexts/view.html", context=context)
-
-
-def get_context(context_id, check_author=True): # The check_author parameter means this function is also useful for getting the context in general, not just for the update view e.g. displaying a single context on a "view context" page.
-    context = get_db().execute(
-        'SELECT c.id, name, description, created, creator_id, username'
-        ' FROM contexts c JOIN users u ON c.creator_id = u.id'
-        ' WHERE c.id = ?',
-        (context_id,)
-    ).fetchone()
-
-    if context is None:
-        abort(404, f"Context id {id} doesn't exist.") # abort() will raise a special exception that returns an HTTP status code. It takes an optional message to show with the error. 404 means "Not Found".
-
-    if check_author and context['creator_id'] != g.user['id']:
-        abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
-
-    return context
+    return render_template("contexts/view.html", context=context, lists=lists, agents=agents)
 
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
@@ -101,6 +86,36 @@ def update(id): # id corresponds to the <int:id> in the route. Flask will captur
     return render_template('contexts/update.html', context=context)
 
 
+@bp.route("/<int:context_id>/new-list", methods=("GET", "POST"))
+@login_required
+def new_list(context_id):
+    context = get_context(context_id)
+    if request.method == "POST":
+        list_id = request.form["list_id"]
+        alist = get_list(list_id)
+        db = get_db()
+        db.execute(
+            "INSERT INTO context_list_relations (creator_id, context_id, list_id)"
+            " VALUES (?, ?, ?)",
+            (g.user["id"], context_id, list_id)
+        )
+        db.commit()
+        return redirect(url_for("contexts.view", context_id=context_id))
+    lists = get_unrelated_lists(context_id)
+    return render_template("contexts/new_list.html", context=context, lists=lists)
+
+
+@bp.route("/<int:context_id>/new-agent", methods=("GET", "POST"))
+@login_required
+def new_agent(context_id):
+    context = get_context(context_id)
+    if request.method == "POST":
+        # TODO
+        pass
+    agents = get_unrelated_agents(context_id)
+    return render_template("contexts/new_agent.html", context=context, agents=agents)
+
+
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required
 def delete(id):
@@ -111,24 +126,74 @@ def delete(id):
     return redirect(url_for('contexts.index'))
 
 
+def get_context(context_id, check_author=True): # The check_author parameter means this function is also useful for getting the context in general, not just for the update view e.g. displaying a single context on a "view context" page.
+    context = get_db().execute(
+        'SELECT c.id, name, description, created, creator_id, username'
+        ' FROM contexts c JOIN users u ON c.creator_id = u.id'
+        ' WHERE c.id = ?',
+        (context_id,)
+    ).fetchone()
+
+    if context is None:
+        abort(404, f"Context id {id} doesn't exist.") # abort() will raise a special exception that returns an HTTP status code. It takes an optional message to show with the error. 404 means "Not Found".
+
+    if check_author and context['creator_id'] != g.user['id']:
+        abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
+
+    return context
+
+
 def get_context_lists(context_id):
     db = get_db()
+    db.row_factory = dict_factory
     lists = db.execute(
-        "SELECT r.list_id, l.name, l.description"
+        "SELECT r.list_id AS id, l.name, l.description, m.id AS master_list_id, m.name AS master_list_name, m.description AS master_list_description"
         " FROM context_list_relations r"
         " JOIN lists l ON l.id = r.list_id"
+        " LEFT JOIN list_tethers t ON t.list_id = l.id"
+        " LEFT JOIN master_lists m ON m.id = t.master_list_id"
         " WHERE context_id = ?",
         (context_id,)
     ).fetchall()
+    for alist in lists:    
+        if alist["master_list_id"]:
+            alist["name"] = alist["master_list_name"]
+            alist["description"] = alist["master_list_description"]
     return lists
 
 
 def get_context_agents(context_id):
     db = get_db()
     agents = db.execute(
-        "SELECT r.agent_id, a.name, a.description"
+        "SELECT r.agent_id AS id, a.name, a.description"
         " FROM context_agent_relations r"
         " JOIN agents a ON a.id = r.agent_id"
         " WHERE context_id = ?",
         (context_id,)
     ).fetchall()
+    return agents
+
+
+def get_unrelated_lists(context_id):
+    db = get_db()
+    context_lists = get_context_lists(context_id)
+    context_list_ids = [context_list["id"] for context_list in context_lists]
+    user_lists = get_user_lists()
+    unrelated_lists = [user_list for user_list in user_lists if user_list["id"] not in context_list_ids]
+    for unrelated_list in unrelated_lists:
+        if unrelated_list["master_list_id"]:
+            unrelated_list["name"] = unrelated_list["master_list_name"] + " (tethered)"
+            unrelated_list["description"] = unrelated_list["master_list_description"]
+    return unrelated_lists
+
+
+def get_unrelated_agents(context_id):
+    db = get_db()
+    agents, t = get_agents()
+    context_agents = get_context_agents(context_id)
+    context_agent_ids = None
+    if context_agents is not None:
+        context_agent_ids = [context_agent["id"] for context_agent in context_agents]
+    if context_agent_ids is not None:
+        agents = [agent for agent in agents if agent["id"] not in context_agent_ids]
+    return agents

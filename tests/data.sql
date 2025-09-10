@@ -10,6 +10,12 @@ VALUES
 	('test name', 'test' || x'0a' || 'description', 2, '2025-01-01 00:00:00');			
 
 
+INSERT INTO context_list_relations (creator_id, context_id, list_id)
+VALUES
+    (2, 1, 1),
+    (2, 1, 2);
+
+
 INSERT INTO master_lists (creator_id, name, description)
 VALUES
     (2, "master list name 1", "master list description 1"),

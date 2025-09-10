@@ -9,6 +9,7 @@
 {% block main %}
     <section class="lists">
         <h2>Lists</h2>
+        <a href="{{ url_for("contexts.new_list", context_id=context["id"]) }}">Connect</a>
         {% if lists|length == 0 %}
         <p>Empty</p>
         {% else %}
@@ -19,7 +20,7 @@
             </header>
             <p>{{ list["description"] }}</p>
             <footer>
-                <p>Created: {{ list["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("lists.edit", id=list["id"]) }}">Edit</a></p>
+                <p><a href="{{ url_for("lists.view", list_id=list["id"]) }}">View</a></p>
             </footer>
         </article>
         {% if not loop.last %}
@@ -30,6 +31,7 @@
     </section>
     <section class="agents">
         <h2>Agents</h2>
+        <a href="{{ url_for("contexts.new_agent", context_id=context["id"]) }}">Connect</a>
         {% if agents|length == 0 %}
         <p>Empty</p>
         {% else %}
@@ -40,7 +42,7 @@
             </header>
             <p>{{ agent["description"] }}</p>
             <footer>
-                <p>Created: {{ agent["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("agent.edit", id=agent["id"]) }}">Edit</a></p>
+                <p><a href="{{ url_for("agent.view", id=agent["id"]) }}">View</a></p>
             </footer>
         </article>
         {% if not loop.last %}
