@@ -8,8 +8,9 @@ from incontext.db import get_db
 
 bp = Blueprint('contexts', __name__, url_prefix='/contexts')
 
+
 @bp.route('/')
-# @login_required
+@login_required
 def index():
     db = get_db()
     contexts = db.execute(
@@ -18,6 +19,7 @@ def index():
         ' ORDER BY created DESC'
     ).fetchall()
     return render_template('contexts/index.html', contexts=contexts)
+
 
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
@@ -44,12 +46,22 @@ def create():
 
     return render_template('contexts/create.html')
 
-def get_context(id, check_author=True): # The check_author parameter means this function is also useful for getting the context in general, not just for the update view e.g. displaying a single context on a "view context" page.
+
+@bp.route("/<int:context_id>/view", methods=("GET",))
+@login_required
+def view(context_id):
+    context = get_context(context_id)
+    lists = get_context_lists(context_id)
+    agents = get_context_agents(context_id)
+    return render_template("contexts/view.html", context=context)
+
+
+def get_context(context_id, check_author=True): # The check_author parameter means this function is also useful for getting the context in general, not just for the update view e.g. displaying a single context on a "view context" page.
     context = get_db().execute(
         'SELECT c.id, name, description, created, creator_id, username'
         ' FROM contexts c JOIN users u ON c.creator_id = u.id'
         ' WHERE c.id = ?',
-        (id,)
+        (context_id,)
     ).fetchone()
 
     if context is None:
@@ -59,6 +71,7 @@ def get_context(id, check_author=True): # The check_author parameter means this 
         abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
 
     return context
+
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
@@ -86,6 +99,7 @@ def update(id): # id corresponds to the <int:id> in the route. Flask will captur
             return redirect(url_for('contexts.index'))
     
     return render_template('contexts/update.html', context=context)
+
 
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required

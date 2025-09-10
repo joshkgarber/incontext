@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block header %}
+	<h1>{% block title %}Context: {{ context["name"] }}{% endblock %}</h1>
+    <p>{{ context["description"] }}</p>
+    <p>Created: {{ context["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for('contexts.update', id=context['id']) }}">Edit</a></p>
+{% endblock %}
+
+{% block main %}
+	{% for list in lists %}
+	<article class="list">
+		<header>
+			<h2>{{ list["name"] }}</h2>
+		</header>
+		<p>{{ list["description"] }}</p>
+		<footer>
+			<p>Created: {{ list["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("lists.edit", id=list["id"]) }}">Edit</a></p>
+		</footer>
+	</article>
+    {% if not loop.last %}
+    <hr>
+    {% endif %}
+	{% endfor %}
+    {% for agent in agents %}
+	<article class="agent">
+		<header>
+			<h2>{{ agent["name"] }}</h2>
+		</header>
+		<p>{{ agent["description"] }}</p>
+		<footer>
+			<p>Created: {{ agent["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("agent.edit", id=agent["id"]) }}">Edit</a></p>
+		</footer>
+	</article>
+    {% if not loop.last %}
+    <hr>
+    {% endif %}
+    {% endfor %}
+{% endblock %}

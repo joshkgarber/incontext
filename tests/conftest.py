@@ -7,7 +7,7 @@ from incontext.db import get_db, init_db
 from instance.config import AGENT_MODELS
 
 with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
-    _data_sql = f.read().decode('utf8')
+    _data_sql = f.read().decode('utf-8')
 
 @pytest.fixture
 def app():

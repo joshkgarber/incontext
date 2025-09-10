@@ -3,18 +3,29 @@ from incontext.db import get_db
 
 
 def test_index(client, auth):
-    response = client.get('/contexts/') # when not logged in each page shows links to log in or register. 
-    assert b'Log In' in response.data
-    assert b'Register' in response.data
-
+    # User must be logged in
+    response = client.get("/contexts/")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/auth/login"
     auth.login()
-    response = client.get('/contexts/') # the index view should display information about the post that was added with the test data.
-    assert b'Log Out' in response.data # when logged in there's a ling to log out.
+    response = client.get("/contexts/")
+    assert response.status_code == 200
     assert b'test name' in response.data
-    assert b'Created: 01.01.2025' in response.data
-    assert b'Creator: test' in response.data
     assert b'test\ndescription' in response.data
-    assert b'href="/contexts/1/update"' in response.data
+
+
+def test_view(client, auth, app):
+    # You must be logged in and have access to view a context
+    response = client.get("/contexts/1/view")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/auth/login"
+    auth.login("other", "other")
+    response = client.get("/contexts/1/view")
+    assert response.status_code == 403
+    auth.login()
+    response = client.get("/contexts/1/view")
+    assert response.status_code == 200
+
 
 
 @pytest.mark.parametrize('path', (

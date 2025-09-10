@@ -2,9 +2,7 @@
 
 {% block header %}
 	<h1>{% block title %}Contexts{% endblock %}</h1>
-	{% if g.user %}
-		<a href="{{ url_for('contexts.create') }}">New</a>
-	{% endif %}
+    <a href="{{ url_for('contexts.create') }}">New</a>
 {% endblock %}
 
 {% block main %}
@@ -15,7 +13,7 @@
 		</header>
 		<p>{{ context['description'] }}</p>
 		<footer>
-			<p>Created: {{ context['created'].strftime('%d.%m.%Y') }} | Creator: {{ context['username'] }}{% if g.user['id'] == context['creator_id'] %} | <a href="{{ url_for('contexts.update', id=context['id']) }}">Edit</a>{% endif %}</p>
+			<p>Created: {{ context['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('contexts.view', context_id=context['id']) }}">View</a> | <a href="{{ url_for('contexts.update', id=context['id']) }}">Edit</a></p>
 		</footer>
 	</article>
 		{% if not loop.last %}
