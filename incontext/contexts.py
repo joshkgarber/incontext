@@ -109,3 +109,26 @@ def delete(id):
     db.execute('DELETE FROM contexts WHERE id = ?', (id,))
     db.commit()
     return redirect(url_for('contexts.index'))
+
+
+def get_context_lists(context_id):
+    db = get_db()
+    lists = db.execute(
+        "SELECT r.list_id, l.name, l.description"
+        " FROM context_list_relations r"
+        " JOIN lists l ON l.id = r.list_id"
+        " WHERE context_id = ?",
+        (context_id,)
+    ).fetchall()
+    return lists
+
+
+def get_context_agents(context_id):
+    db = get_db()
+    agents = db.execute(
+        "SELECT r.agent_id, a.name, a.description"
+        " FROM context_agent_relations r"
+        " JOIN agents a ON a.id = r.agent_id"
+        " WHERE context_id = ?",
+        (context_id,)
+    ).fetchall()
