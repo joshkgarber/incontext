@@ -5,15 +5,18 @@ VALUES
   ("admin2", "scrypt:32768:8:1$huAZd2BbgeBRZ1C6$780368ac6f62cfd8fa4c4505430d48f4a8366fcfda4c14797acd011691176a13ea7c5c6671f8d04793f430a86a54a26d3a49c624d62d9d4210608a70cb0151da", 1);
 
 
-INSERT INTO contexts (name, description, creator_id, created)
+INSERT INTO contexts (creator_id, name, description)
 VALUES
-	('test name', 'test' || x'0a' || 'description', 2, '2025-01-01 00:00:00');			
+	(2, "context name 1", "context description 1"),
+	(2, "context name 2", "context description 2"),
+	(3, "context name 3", "context description 3");
 
 
 INSERT INTO context_list_relations (creator_id, context_id, list_id)
 VALUES
     (2, 1, 1),
-    (2, 1, 2);
+    (2, 1, 2),
+    (2, 1, 5);
 
 
 INSERT INTO master_lists (creator_id, name, description)
@@ -102,9 +105,9 @@ VALUES
 	(2, "list name 2", "list description 2", 0),
 	(3, "list name 3", "list description 3", 0),
 	(3, "list name 4", "list description 4", 0),
-    (2, "list name 5 (tethered)", "list description 5", 1),
-    (2, "list name 6 (tethered)", "list description 6", 1),
-    (3, "list name 7 (tethered)", "list description 7", 1);
+    (2, "tethered list name 1", "tethered list description 1", 1),
+    (2, "tethered list name 2", "tethered list description 2", 1),
+    (3, "tethered list name 3", "tethered list description 3", 1);
 
 
 INSERT INTO list_item_relations (list_id, item_id)
@@ -139,9 +142,9 @@ VALUES
 
 INSERT INTO agents (creator_id, name, description, model_id, role, instructions)
 VALUES
-	(2, "agent name 1", "agent description 1", 3, "agent role 1", "Reply with one word: Working"),
-	(2, "agent name 2", "agent description 2", 6, "agent role 2", "Reply with one word: Working"),
-	(3, "agent name 3", "agent description 3", 9, "agent role 3", "Reply with one word: Working");
+	(2, "agent name 1", "agent description 1", 3, "agent role 1", "agent instructions 1"),
+	(2, "agent name 2", "agent description 2", 6, "agent role 2", "agent instructions 2"),
+	(3, "agent name 3", "agent description 3", 9, "agent role 3", "agent instructions 3");
 
 
 INSERT INTO tethered_agents (creator_id, master_agent_id)

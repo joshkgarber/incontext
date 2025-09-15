@@ -3,10 +3,28 @@
 - [x] Merge just-contexts with masters-with-lists-and-agents
 - [x] Define user stories
 - [x] Update the schema
-- [ ] Write the user stories and tests along with them as you go.
+- [ ] Write the requirements and tests along with them as you go.
 
-## User stories
+## Requirements
 
+- [ ] Make it work. Don't worry about the code being good or fast at this stage.
+
+- [x] Lists is working perfectly
+- [ ] Tests for lists are complete
+- [ ] Agents is working perfectly
+- [ ] Tests for agents are complete
+- [ ] Contexts is working perfectly (see points below)
+- [ ] Tests for contexts are complete
+
+- [ ] You can add a name and description to a tethered list.
+    - [x] There's a "name" field and a description field on the new tethered list form.
+    - [x] On the tethered lists's view layout it indicated that it's a tethered list and there's a link to view the master list.
+    - [x] The list index shows name of list not name of master list.
+    - [x] The route to edit tethered lists is not blocked, and you can edit the name and description.
+    - [ ] Update tests
+        - [ ] Cover the above changes
+            - [ ] Don't forget deleting a tethered list
+        - [ ] Add a test for when you add an item to a master list: it should show in the tethered list view layout.
 - [x] You must be logged in to view contexts (update layout needed)
 - [x] You can only view contexts which you own.
 - [x] Contexts have a view template
@@ -32,3 +50,13 @@
 - [ ] Contexts uses "new" and "edit" nomenclature not "create" and "update"
 - [ ] Optimization:Sanitize user lists (lists.py::get_user_lists()) such that master list names are replaced immediately, and not later in the route function. 
     - [ ] Affects lists/index layout and contexts/new_list layout and maybe others
+- [ ] Master lists view have links to all lists which are tethered to it and owned by the user.
+- [ ] Test working with edge cases
+    - [ ] tethering to a master list with no items
+    - [ ] tethering to a master list with no details
+- [ ] All ids have a prefix based on the table it belongs to
+- [ ] Remove master agents and master lists (keep code just comment it out for now
+- [ ] Make agent descriptions not required
+- [ ] Improve agent model id validation to only accept available ids
+- [ ] Fix data validation tests. checking the flash error text in response.data is giving false positives. test_agents.py::test_new_post it's saying description is required when it's not (it is on the front end but not on the back end)
+

@@ -3,39 +3,60 @@
 {% block header %}
 <h1>{% block title %}List: {{ alist['name'] }}{% endblock %}</h1>
 <p>{{ alist['description'] }} <a href="{{ url_for('lists.edit', list_id=alist['id']) }}">Edit</a></p>
+{% if alist["tethered"] %}
+<p><strong>This list is tethered to a master list.</strong> <a href="{{ url_for('master_lists.view', master_list_id=alist["master_list_id"]) }}">View Master</a></p>
+{% endif %}
 {% endblock %}
 
 {% block main %}
 <section id="items">
 	<h2>Items</h2>
-{% if items|length == 0 %}
+{% if alist["items"]|length == 0 and alist["master_items"]|length == 0 %}
 	<p>Empty</p>
-	<a href="{{ url_for('lists.new_item', list_id=alist['id']) }}">New Item</a>
+	<a href="{{ url_for("lists.new_item", list_id=alist["id"]) }}">New Item</a>
 </section>
 {% else %}
-	<a href="{{ url_for('lists.new_item', list_id=alist['id']) }}">New Item</a>
+	<a href="{{ url_for("lists.new_item", list_id=alist["id"]) }}">New Item</a>
 	<table class="item-table">
 		<tr>
 			<th>ID</th>
 			<th>Name</th>
-			{% for detail in details %}
-			<th>{{ detail['name'] }}</th>
+			{% for detail in alist["details"] %}
+			<th>{{ detail["name"] }}</th>
 			{% endfor %}
 			<th>Created</th>
 		</tr>
-		{% for item in items %}
-		<tr>
-			<td>{{ item['id'] }}</td>
-			{% if item['name']|length > 30 %}
-			<td>{{ item['name']|truncate(30,false,'...') }}</td>
+        {% for master_item in alist["master_items"] %}
+			<td>{{ master_item['id'] }}</td>
+			{% if master_item['name']|length > 30 %}
+			<td>{{ master_item['name']|truncate(30,false,'...') }}</td>
 			{% else %}
-			<td>{{ item['name'] }}</td>
+			<td>{{ master_item['name'] }}</td>
 			{% endif %}
-			{% for detail in item['details'] %}
-			{% if detail['content']|length > 30 %}
-			<td>{{ detail['content']|truncate(30,false,'...') }}</td>
+			{% for master_detail in master_item['master_details'] %}
+			{% if master_detail['content']|length > 30 %}
+			<td>{{ master_detail['content']|truncate(30,false,'...') }}</td>
 			{% else %}
-			<td>{{ detail['content'] }}</td>
+			<td>{{ master_detail['content'] }}</td>
+			{% endif %}
+			{% endfor %}
+			<td>{{ master_item['created'].strftime('%d.%m.%Y') }}</td>
+			<td><a href="{{ url_for('lists.view_item', list_id=alist['id'], item_id=master_item['id']) }}">View</a></td>
+			<td>(tethered)</td>
+        {% endfor %}
+		{% for item in alist["items"] %}
+		<tr>
+			<td>{{ item["id"] }}</td>
+			{% if item["name"]|length > 30 %}
+			<td>{{ item["name"]|truncate(30,false,"...") }}</td>
+			{% else %}
+			<td>{{ item["name"] }}</td>
+			{% endif %}
+			{% for relation in item["relations"] %}
+			{% if relation["content"]|length > 30 %}
+			<td>{{ relation["content"]|truncate(30,false,"...") }}</td>
+			{% else %}
+			<td>{{ relation["content"] }}</td>
 			{% endif %}
 			{% endfor %}
 			<td>{{ item['created'].strftime('%d.%m.%Y') }}</td>
@@ -48,14 +69,16 @@
 {% endif %}
 <section id="details">
 	<h2>Details</h2>
-{% if details|length == 0 %}
+{% if alist["details"]|length == 0 %}
 	<p>Empty</p>
 	<a href="{{ url_for('lists.new_detail', list_id=alist['id']) }}">New Detail</a>
 </section>
 {% else %}
+    {% if not alist["tethered"] %}
 	<a href="{{ url_for('lists.new_detail', list_id=alist['id']) }}">New Detail</a>
+    {% endif %}
 	<dl>
-		{% for detail in details %}
+		{% for detail in alist["details"] %}
 		<dt><b>{{ detail['name'] }}</b> <a href="{{ url_for('lists.edit_detail', list_id=alist['id'], detail_id=detail['id']) }}">Edit</a></dt>
 		<dd>{{ detail['description'] }}</dd>
 		{% endfor %}

@@ -4,7 +4,7 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from incontext.auth import login_required
-from incontext.db import get_db
+from incontext.db import get_db, dict_factory
 from incontext.master_agents import get_agent_models
 from incontext.master_agents import get_master_agents
 from incontext.master_agents import get_master_agent
@@ -108,7 +108,7 @@ def edit(agent_id):
                 (name, description, model_id, role, instructions, agent_id)
             )
             db.commit()
-            return redirect(url_for('agents.index'))
+            return redirect(url_for('agents.view', agent_id=agent_id))
     return render_template("agents/edit.html", agent=agent, agent_models=agent_models)
 
 

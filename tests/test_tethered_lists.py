@@ -25,7 +25,7 @@ def test_new_tethered_list(app, client, auth):
     assert response.headers["Location"] == "/auth/login"
 # Master list id must exist
     auth.login()
-    data = dict(name="tethered", master_list_id = 3) 
+    data = dict(name="tethered list name 4", description="tethered list description 4", master_list_id=3)
     response = client.post("/lists/new-tethered", data=data)
     assert response.status_code == 404
     # A new record is added to `lists` and `list_tethers`.
@@ -34,7 +34,7 @@ def test_new_tethered_list(app, client, auth):
         db.row_factory = dict_factory
         lists_before = db.execute("SELECT id FROM lists").fetchall()
         list_tethers_before = db.execute("SELECT id FROM list_tethers").fetchall()
-        data = dict(name="tethered", description="", master_list_id=1)
+        data["master_list_id"] = 1
         response = client.post("/lists/new-tethered", data=data)
         lists_after = db.execute("SELECT id FROM lists").fetchall()
         list_tethers_after = db.execute("SELECT id FROM list_tethers").fetchall()
@@ -56,15 +56,18 @@ def test_view_tethered_list(app, client, auth):
     auth.login()
     response = client.get("/lists/5/view")
     assert response.status_code == 200
+    # List name and description are shown
+    assert b"tethered list name 1" in response.data
+    assert b"tethered list description 1" in response.data
+    # Link to the master list is shown
+    assert b'href="/master-lists/1/view"' in response.data
     # Showing data of the master list
     with app.app_context():
         db = get_db()
         db.row_factory = dict_factory
-        master_list_id = db.execute("SELECT master_list_id FROM list_tethers WHERE list_id = 5").fetchone()["master_list_id"]
-        other_master_list_ids = db.execute("SELECT id FROM master_lists WHERE id != ?", (master_list_id,)).fetchall()
+        master_list_id = 1
+        other_master_list_ids = db.execute("SELECT id FROM master_lists WHERE id != 1").fetchall()
         master_list = get_master_list(master_list_id, False)
-        assert master_list["name"].encode() in response.data
-        assert master_list["description"].encode() in response.data
         master_items = master_list["master_items"]
         for master_item in master_items:
             assert master_item["name"].encode() in response.data
@@ -75,8 +78,6 @@ def test_view_tethered_list(app, client, auth):
             assert master_detail["name"].encode() in response.data
         for other_master_list_id in other_master_list_ids:
             other_master_list = get_master_list(other_master_list_id["id"], False)
-            assert other_master_list["name"].encode() not in response.data
-            assert other_master_list["description"].encode() not in response.data
             other_master_items = db.execute("SELECT name FROM master_items WHERE id NOT IN (1, 2)")
             for other_master_item in other_master_items:
                 assert other_master_item["name"].encode() not in response.data

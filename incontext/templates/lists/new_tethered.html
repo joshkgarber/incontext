@@ -14,8 +14,14 @@
     <p>{{ master_list['description'] }}</p>
     <p><b>Created on </b>{{ master_list['created'].strftime('%d.%m.%Y') }} <b>by</b> {{ master_list["username"] }} | <a href="{{ url_for('master_lists.view', master_list_id=master_list['id']) }}">View</a></p>
     <form method="post">
+        <label for="name">Name
+            <input name="name" id="name" value="{{ request.form["name"] }}" autofocus required>
+        </label>
+        <label for="name">Description
+            <textarea name="description" id="description" value="{{ request.form["description"] }}"></textarea>
+        </label>
         <input type="hidden" name="master_list_id" value="{{ master_list["id"] }}">
-        <input type="submit" value="Choose">
+        <input type="submit" value="Submit">
 	</form>
 </article>
 {% if not loop.last %}

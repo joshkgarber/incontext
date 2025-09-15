@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 import pytest
-from incontext.db import get_db
+from incontext.db import get_db, dict_factory
 from flask import g, session
 
 
@@ -65,3 +65,15 @@ def test_admin_login(client, auth):
         assert g.user['username'] == 'admin'
         assert g.user["admin"] == True
 
+
+def get_other_tables(table_names=[]):
+    db = get_db()
+    db.row_factory = dict_factory
+    all_tables = db.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE '%sqlite_%'").fetchall()
+    other_tables = []
+    for table in all_tables:
+        if table["name"] not in table_names:
+            other_table = db.execute(f"SELECT * FROM {table["name"]}").fetchall()
+            other_tables.append(other_table)
+    return other_tables
+        

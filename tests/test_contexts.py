@@ -12,27 +12,37 @@ def test_index(client, auth):
     auth.login()
     response = client.get("/contexts/")
     assert response.status_code == 200
-    assert b'test name' in response.data
-    assert b'test\ndescription' in response.data
+    # Shows contexts owned by the user
+    assert b"context name 1" in response.data
+    assert b"context description 1" in response.data
+    assert b"context name 2" in response.data
+    assert b"context description 2" not in response.data
+    assert b"context name 3" in response.data
+    assert b"context description 3" not in response.data
 
 
 def test_view(client, auth, app):
+    path = "/contexts/1/view"
     # You must be logged in and have access to view a context
-    response = client.get("/contexts/1/view")
+    response = client.get(path)
     assert response.status_code == 302
     assert response.headers["Location"] == "/auth/login"
     auth.login("other", "other")
-    response = client.get("/contexts/1/view")
+    response = client.get(path)
     assert response.status_code == 403
     auth.login()
-    response = client.get("/contexts/1/view")
+    response = client.get(path)
     assert response.status_code == 200
     # Shows connected lists and agents
     assert b"list name 1" in response.data
     assert b"list name 2" in response.data
+    assert b"master list name 1" in response.data
     # Doesn't show other lists
     assert b"list name 3" not in response.data
+    assert b"list name 4" not in response.data
     assert b"list name 5" not in response.data
+    assert b"master list name 2" not in response.data
+    assert b"master list name 3" not in response.data
 
 
 def test_connect_list(client, auth, app):
@@ -54,9 +64,8 @@ def test_connect_list(client, auth, app):
         assert b"<h3>list name 2" not in response.data
         assert b"<h3>list name 3" not in response.data
         assert b"<h3>list name 4" not in response.data
-        assert b"<h3>master list name 1" in response.data
-        assert b"<h3>master list name 2" not in response.data
-        assert b"<h3>master list name 3" not in response.data
+        assert b"<h3>master list name 1" not in response.data
+        assert b"<h3>master list name 2" in response.data
     # Post requests
     auth.logout()
     # Must be logged in and own the context

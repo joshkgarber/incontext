@@ -11,9 +11,12 @@
 {% block main %}
 {% for alist in lists %}
 <article>
-    <h2>{% if alist["master_list_id"] %}{{ alist["master_list_name"] }} (tethered){% else %}{{ alist['name'] }}{% endif %}</h2>
-    <p>{% if alist["master_list_id"] %}{{ alist["master_list_description"] }} (tethered){% else %}{{ alist['description'] }}{% endif %}</p>
-    <p><b>Created: </b>{{ alist['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('lists.view', list_id=alist['id']) }}">View</a> | <a href="{{ url_for('lists.edit', list_id=alist['id']) }}">Edit</a>{% if alist["master_list_id"] %} | <a href="{{ url_for('master_lists.view', master_list_id=alist['master_list_id']) }}">View Master</a>{% endif %}</p>
+    <h2>{{ alist['name'] }}</h2>
+    <p>{{ alist['description'] }}</p>
+    <p><b>Created: </b>{{ alist['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('lists.view', list_id=alist['id']) }}">View</a> | <a href="{{ url_for('lists.edit', list_id=alist['id']) }}">Edit</a></p>
+    {% if alist["master_list_id"] %}
+    <p><strong>(Tethered</strong> <a href="{{ url_for('master_lists.view', master_list_id=alist["master_list_id"]) }}">View Master<strong>)</strong></a></p>
+    {% endif %}
 	{% if not loop.last %}
 	<hr>
 	{% endif %}
