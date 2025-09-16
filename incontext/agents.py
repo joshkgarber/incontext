@@ -54,7 +54,8 @@ def new():
 @login_required
 def view(agent_id):
     agent = get_agent(agent_id)
-    return render_template('agents/view.html', agent=agent)
+    contexts = get_agent_contexts(agent_id)
+    return render_template('agents/view.html', agent=agent, contexts=contexts)
 
 
 @bp.route('/<int:agent_id>/edit', methods=('GET', 'POST'))
@@ -138,3 +139,29 @@ def get_agent_models():
         " FROM agent_models"
     ).fetchall()
     return agent_models
+
+
+def get_agent_creator_id(agent_id):
+    creator_id = get_db().execute(
+        "SELECT a.creator_id"
+        " FROM agents a"
+        " WHERE a.id = ?",
+        (agent_id,)
+    ).fetchone()["creator_id"]
+    return creator_id
+
+
+def get_agent_contexts(agent_id, check_access=True):
+    if check_access:
+        agent_creator_id = get_agent_creator_id(agent_id)
+        if agent_creator_id != g.user['id']:
+            abort(403)
+    db = get_db()
+    contexts = db.execute(
+        "SELECT c.id, c.name, c.description FROM contexts c"
+        " JOIN context_agent_relations r"
+        " ON r.context_id = c.id"
+        " WHERE r.agent_id = ?",
+        (agent_id,)
+    ).fetchall()
+    return contexts

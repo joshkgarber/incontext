@@ -173,6 +173,23 @@ def test_view(app, client, auth):
                     assert other_model_name.encode() not in response.data
                 assert agent["role"].encode() not in response.data
                 assert agent["instructions"].encode() not in response.data
+        contexts = db.execute(
+            "SELECT c.name, c.description, r.agent_id FROM contexts c"
+            " JOIN context_agent_relations r ON r.context_id = c.id"
+        ).fetchall()
+        context_names = []
+        context_descriptions = []
+        for context in contexts:
+            if context["agent_id"] == 1:
+                context_names.append(context["name"])
+                assert context["name"].encode() in response.data
+                context_descriptions.append(context["description"])
+                assert context["description"].encode() in response.data
+            else:
+                if context["name"] not in context_names:
+                    assert context["name"] not in response.data
+                if context["description"] not in context_descriptions:
+                    assert context["description"] not in response.data
 
 
 def test_edit_get(app, client, auth):

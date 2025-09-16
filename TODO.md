@@ -4,6 +4,7 @@
 - [x] Define user stories
 - [x] Update the schema
 - [ ] Write the requirements and tests along with them as you go.
+- [ ] Run a coverage report
 
 ## Requirements
 
@@ -35,15 +36,8 @@
     - [x] The agent name and description are shown in the context.
     - [x] Once an agent has been added there is a button to remove it.
     - [x] There is a button to view the agent.
-    - [ ] Agent view layouts have links to their related contexts.
+    - [x] Agent view layouts have links to their related contexts.
 - [x] You can add as many agents as you want.
 - [ ] Deleting a context will delete its list relations agent relation (if exists)
 - [x] Contexts uses "new" and "edit" nomenclature not "create" and "update"
-- [ ] All ids have a prefix based on the table it belongs to
 - [x] Remove master agents and master lists
-- [ ] Make agent descriptions not required
-- [ ] Improve agent model id validation to only accept available ids
-- [ ] Fix data validation tests. checking the flash error text in response.data is giving false positives. test_agents.py::test_new_post it's saying description is required when it's not (it is on the front end but not on the back end.). Applies to all data validation tests including lists and contexts (new and edit) (post requests) (You could use specific messages for each field.
-- [ ] Remove all explanatory comments
-- [ ] Remove db.row_factory = dict_factory as it's configured in get_db() now
-- [ ] Replace ' with " everywhere
