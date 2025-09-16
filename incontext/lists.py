@@ -359,53 +359,6 @@ def get_list_with_items_and_details(list_id, check_creator=True):
     return alist
 
 
-def get_list_items_with_details(list_id, check_creator=True):
-    if check_creator:
-        list_creator_id = get_list_creator_id(list_id)
-        if list_creator_id != g.user['id']:
-            abort(403)
-    alist = get_list(list_id)
-    db = get_db()
-    items = db.execute(
-        'SELECT i.id, i.name, i.created'
-        ' FROM items i'
-        ' JOIN list_item_relations r ON r.item_id = i.id'
-        ' WHERE r.list_id = ?',
-        (list_id,)
-    ).fetchall()
-    details = db.execute(
-        'SELECT d.id, d.name, d.description'
-        ' FROM details d'
-        ' JOIN list_detail_relations r ON r.detail_id = d.id'
-        ' WHERE r.list_id = ?',
-        (list_id,)
-    ).fetchall()
-    item_ids = [item['id'] for item in items]
-    placeholders = f'{"?, " * len(item_ids)}'[:-2]
-    relations = db.execute(
-        'SELECT r.item_id, r.detail_id, r.content'
-        ' FROM item_detail_relations r'
-        f' WHERE r.item_id IN ({placeholders})',
-        item_ids
-    ).fetchall()
-    list_items = []
-    for item in items:
-        this_item = {}
-        this_item['id'] = item['id']
-        this_item['name'] = item['name']
-        this_item['created'] = item['created']
-        this_item['details'] = []
-        for detail in details:
-            this_detail = {}
-            this_detail['name'] = detail['name']
-            for relation in relations:
-                if relation['item_id'] == item['id'] and relation['detail_id'] == detail['id']:
-                    this_detail['content'] = relation['content']
-            this_item['details'].append(this_detail)
-        list_items.append(this_item)
-    return list_items
-
-
 def get_list_items(list_id, check_creator=True):
     if check_creator:
         list_creator_id = get_list_creator_id(list_id)

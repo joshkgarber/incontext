@@ -4,7 +4,8 @@
 - [x] Define user stories
 - [x] Update the schema
 - [x] Write the requirements and tests along with them as you go.
-- [ ] Run a coverage report
+- [x] Run a coverage report
+- [ ] Deploy
 
 ## Requirements
 

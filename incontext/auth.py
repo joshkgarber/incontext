@@ -90,13 +90,3 @@ def login_required(view): # decorator to check that a user is logged in. apply i
         return view(**kwargs)
 
     return wrapped_view
-
-
-def admin_only(view): # decorator to check that a user has admin property. apply it to views that are for admins only.
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
-        if not g.user["admin"]:
-            abort(403)
-        return view(**kwargs)
-    return wrapped_view
-
