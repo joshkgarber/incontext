@@ -3,12 +3,12 @@
 - [x] Merge just-contexts with masters-with-lists-and-agents
 - [x] Define user stories
 - [x] Update the schema
-- [ ] Write the requirements and tests along with them as you go.
+- [x] Write the requirements and tests along with them as you go.
 - [ ] Run a coverage report
 
 ## Requirements
 
-- [ ] Make it work. Don't worry about the code being good or fast at this stage.
+- [x] Make it work. Don't worry about the code being good or fast at this stage.
 
 - [x] Lists is working perfectly
 - [x] Tests for lists are complete
@@ -38,6 +38,6 @@
     - [x] There is a button to view the agent.
     - [x] Agent view layouts have links to their related contexts.
 - [x] You can add as many agents as you want.
-- [ ] Deleting a context will delete its list relations agent relation (if exists)
+- [x] Deleting a context will delete its list relations agent relation (if exists)
 - [x] Contexts uses "new" and "edit" nomenclature not "create" and "update"
 - [x] Remove master agents and master lists

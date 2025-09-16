@@ -88,6 +88,8 @@ def delete(context_id):
     get_context(context_id)
     db = get_db()
     db.execute('DELETE FROM contexts WHERE id = ?', (context_id,))
+    db.execute("DELETE FROM context_list_relations WHERE context_id = ?", (context_id,))
+    db.execute("DELETE FROM context_agent_relations WHERE context_id = ?", (context_id,))
     db.commit()
     return redirect(url_for('contexts.index'))
 

@@ -262,8 +262,10 @@ def test_delete(client, auth, app):
         # Get affected tables before
         db = get_db()
         contexts_before = db.execute("SELECT * FROM contexts").fetchall()
+        context_list_relations_before = db.execute("SELECT * FROM context_list_relations").fetchall()
+        context_agent_relations_before = db.execute("SELECT * FROM context_agent_relations").fetchall()
         # Get other tables before
-        other_tables_before = get_other_tables(["contexts"])
+        other_tables_before = get_other_tables(["contexts", "context_list_relations", "context_agent_relations"])
         # Make request
         auth.login()
         response = client.post("contexts/1/delete")
@@ -271,11 +273,13 @@ def test_delete(client, auth, app):
         assert response.status_code == 302
         assert response.headers["Location"] == "/contexts/"
         # Get other tables after
-        other_tables_after = get_other_tables(["contexts"])
+        other_tables_after = get_other_tables(["contexts", "context_list_relations", "context_agent_relations"])
         # Assert other tables didn't change
         assert other_tables_after == other_tables_before
         # Get affected tables after
         contexts_after = db.execute("SELECT * FROM contexts").fetchall()
+        context_list_relations_after = db.execute("SELECT * FROM context_list_relations").fetchall()
+        context_agent_relations_after = db.execute("SELECT * FROM context_agent_relations").fetchall()
         # Assert the affected rows are gone and the other rows are unchanged
         assert len(contexts_after) == len(contexts_before) - 1
         affected_context = next((c for c in contexts_before if c["id"] == 1), None)
@@ -283,6 +287,22 @@ def test_delete(client, auth, app):
         for context in contexts_after:
             assert context in contexts_before
             assert context != affected_context
+        clr_deletion_count = 0
+        for clr in context_list_relations_before:
+            if clr["context_id"] == 1:
+                assert clr not in context_list_relations_after
+                clr_deletion_count += 1
+            else:
+                assert clr in context_list_relations_after
+        assert len(context_list_relations_before) == len(context_list_relations_after) + clr_deletion_count
+        car_deletion_count = 0
+        for car in context_list_relations_before:
+            if car["context_id"] == 1:
+                assert car not in context_agent_relations_after
+                car_deletion_count += 1
+            else:
+                assert car in context_list_relations_after
+        assert len(context_agent_relations_before) == len(context_agent_relations_after) + car_deletion_count
 
 
 def test_connect_list_get(client, auth, app):
