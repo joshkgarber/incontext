@@ -46,7 +46,8 @@ def new():
 @login_required
 def view(list_id):
     alist = get_list_with_items_and_details(list_id)
-    return render_template('lists/view.html', alist=alist)
+    contexts = get_list_contexts(list_id)
+    return render_template('lists/view.html', alist=alist, contexts=contexts)
 
 
 @bp.route('/<int:list_id>/edit', methods=('GET', 'POST'))
@@ -506,3 +507,20 @@ def get_detail_list_id(detail_id):
     if list_id:
         return list_id['list_id']
     abort(404)
+
+
+def get_list_contexts(list_id, check_access=True):
+    if check_access:
+        list_creator_id = get_list_creator_id(list_id)
+        if list_creator_id != g.user['id']:
+            abort(403)
+    db = get_db()
+    contexts = db.execute(
+        "SELECT c.id, c.name, c.description FROM contexts c"
+        " JOIN context_list_relations r"
+        " ON r.context_id = c.id"
+        " WHERE r.list_id = ?",
+        (list_id,)
+    ).fetchall()
+    return contexts
+        

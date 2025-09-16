@@ -64,4 +64,17 @@
 	</dl>
 </section>
 {% endif %}
+<section id="contexts">
+    <h2>Contexts</h2>
+    {% if contexts|length == 0 %}
+    <p>Empty</p>
+    {% else %}
+    <dl>
+    {% for context in contexts %}
+    <dt><b>{{ context["name"] }}</b> <a href="{{ url_for("contexts.view", context_id=context["id"]) }}">View</a></dt>
+    <dd>{{ context["description"] }}</li></dd>
+    {% endfor %}
+    </dl>
+    {% endif %}
+</section>
 {% endblock %}

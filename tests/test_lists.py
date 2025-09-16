@@ -72,24 +72,29 @@ def test_new(app, client, auth):
 
 
 def test_view(app, client, auth):
-    # User must be logged in
-    response = client.get("lists/1/view")
-    assert response.status_code == 302
-    assert response.headers["Location"] == "/auth/login"
-    # User must be list creator
-    auth.login("other", "other")
-    assert client.get("lists/1/view").status_code == 403
     with app.app_context():
-        # Data does not change
-        data_before = get_other_tables()
+        # Get all tables before
+        all_tables_before = get_other_tables()
+        # User must be logged in
+        response = client.get("lists/1/view")
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        assert get_other_tables() == all_tables_before
+        # User must have access
+        auth.login("other", "other")
+        assert client.get("lists/1/view").status_code == 403
+        assert get_other_tables() == all_tables_before
+        # The list must exist
         auth.login()
+        assert client.get("lists/bogus/view").status_code == 404
+        assert get_other_tables() == all_tables_before
+        # Make the request
         response = client.get("/lists/1/view")
         assert response.status_code == 200
-        data_after = get_other_tables()
-        assert data_after == data_before
-        # list data gets served and other list data doesn't get served
+        assert get_other_tables() == all_tables_before
+        # List data gets served and other list data doesn't get served
         db = get_db()
-        lists = db.execute("SELECT * FROM lists")
+        lists = db.execute("SELECT * FROM lists").fetchall()
         for alist in lists:
             if alist["id"] == 1:
                 assert alist["name"].encode() in response.data
@@ -128,8 +133,23 @@ def test_view(app, client, auth):
                 assert idr["content"].encode() in response.data
             else:
                 assert idr["content"].encode() not in response.data
-    # list must exist
-    assert client.get("lists/bogus/view").status_code == 404
+        contexts = db.execute(
+            "SELECT c.name, c.description, r.list_id FROM contexts c"
+            " JOIN context_list_relations r ON r.context_id = c.id"
+        ).fetchall()
+        context_names = []
+        context_descriptions = []
+        for context in contexts:
+            if context["list_id"] == 1:
+                context_names.append(context["name"])
+                assert context["name"].encode() in response.data
+                context_descriptions.append(context["description"])
+                assert context["description"].encode() in response.data
+            else:
+                if context["name"] not in context_names:
+                    assert context["name"] not in response.data
+                if context["description"] not in context_descriptions:
+                    assert context["description"] not in response.data
 
 
 def test_edit(app, client, auth):
