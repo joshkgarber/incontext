@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block header %}
 	<h1>{% block title %}Context: {{ context["name"] }}{% endblock %}</h1>
     <p>{{ context["description"] }}</p>
-    <p>Created: {{ context["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for('contexts.update', id=context['id']) }}">Edit</a></p>
+    <p>Created: {{ context["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("contexts.edit", context_id=context["id"]) }}">Edit</a></p>
 {% endblock %}
 
 {% block main %}
@@ -21,6 +21,10 @@
             <p>{{ list["description"] }}</p>
             <footer>
                 <p><a href="{{ url_for("lists.view", list_id=list["id"]) }}">View</a></p>
+                <form method="post" action="{{ url_for("contexts.remove_list", context_id=context["id"]) }}">
+                <input type="hidden" name="list_id" value="{{ list["id"] }}">
+                <input type="submit" value="Remove">
+                </form>
             </footer>
         </article>
         {% if not loop.last %}
@@ -42,7 +46,11 @@
             </header>
             <p>{{ agent["description"] }}</p>
             <footer>
-                <p><a href="{{ url_for("agent.view", id=agent["id"]) }}">View</a></p>
+                <p><a href="{{ url_for("agents.view", agent_id=agent["id"]) }}">View</a></p>
+                <form method="post" action="{{ url_for("contexts.remove_agent", context_id=context["id"]) }}">
+                    <input type="hidden" name="agent_id" value="{{ agent["id"] }}">
+                    <input type="submit" value="Remove">
+                </form>
             </footer>
         </article>
         {% if not loop.last %}

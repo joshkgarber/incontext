@@ -1,19 +1,19 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block header %}
 	<h1>{% block title %}Contexts{% endblock %}</h1>
-    <a href="{{ url_for('contexts.create') }}">New</a>
+    <a href="{{ url_for("contexts.new") }}">New</a>
 {% endblock %}
 
 {% block main %}
 	{% for context in contexts %}
 	<article class="context">
 		<header>
-			<h2>{{ context['name'] }}</h2>
+			<h2>{{ context["name"] }}</h2>
 		</header>
-		<p>{{ context['description'] }}</p>
+		<p>{{ context["description"] }}</p>
 		<footer>
-			<p>Created: {{ context['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('contexts.view', context_id=context['id']) }}">View</a> | <a href="{{ url_for('contexts.update', id=context['id']) }}">Edit</a></p>
+			<p>Created: {{ context["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("contexts.view", context_id=context["id"]) }}">View</a> | <a href="{{ url_for("contexts.edit", context_id=context["id"]) }}">Edit</a></p>
 		</footer>
 	</article>
 		{% if not loop.last %}

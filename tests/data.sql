@@ -15,14 +15,20 @@ VALUES
 INSERT INTO context_list_relations (creator_id, context_id, list_id)
 VALUES
     (2, 1, 1),
-    (2, 1, 2),
-    (2, 1, 5);
+    (2, 1, 2);
+    -- (2, 1, 5);
 
 
-INSERT INTO master_lists (creator_id, name, description)
+INSERT INTO context_agent_relations (creator_id, context_id, agent_id)
 VALUES
-    (2, "master list name 1", "master list description 1"),
-    (2, "master list name 2", "master list description 2");
+    (2, 1, 1),
+    (2, 1, 2);
+
+
+-- INSERT INTO master_lists (creator_id, name, description)
+-- VALUES
+--     (2, "master list name 1", "master list description 1"),
+--     (2, "master list name 2", "master list description 2");
 
 
 INSERT INTO master_items (creator_id, name)
@@ -105,9 +111,10 @@ VALUES
 	(2, "list name 2", "list description 2", 0),
 	(3, "list name 3", "list description 3", 0),
 	(3, "list name 4", "list description 4", 0),
-    (2, "tethered list name 1", "tethered list description 1", 1),
-    (2, "tethered list name 2", "tethered list description 2", 1),
-    (3, "tethered list name 3", "tethered list description 3", 1);
+	(2, "list name 5", "list description 5", 0);
+    -- (2, "tethered list name 1", "tethered list description 1", 1),
+    -- (2, "tethered list name 2", "tethered list description 2", 1),
+    -- (3, "tethered list name 3", "tethered list description 3", 1);
 
 
 INSERT INTO list_item_relations (list_id, item_id)
@@ -144,7 +151,8 @@ INSERT INTO agents (creator_id, name, description, model_id, role, instructions)
 VALUES
 	(2, "agent name 1", "agent description 1", 3, "agent role 1", "agent instructions 1"),
 	(2, "agent name 2", "agent description 2", 6, "agent role 2", "agent instructions 2"),
-	(3, "agent name 3", "agent description 3", 9, "agent role 3", "agent instructions 3");
+	(3, "agent name 3", "agent description 3", 9, "agent role 3", "agent instructions 3"),
+	(2, "agent name 4", "agent description 4", 5, "agent role 4", "agent instructions 4");
 
 
 INSERT INTO tethered_agents (creator_id, master_agent_id)

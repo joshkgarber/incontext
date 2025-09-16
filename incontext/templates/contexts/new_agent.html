@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block header %}
 <h1>{% block title %}New Connected Agent{% endblock %}</h1>
@@ -11,11 +11,11 @@
 {% else %}
 {% for agent in agents %}
 <article>
-    <h3>{{ agent['name'] }}</h3>
-    <p>{{ agent['description'] }}</p>
-    <p><b>Created on </b>{{ agent['created'].strftime('%d.%m.%Y') }} <b>by</b> {{ agent["username"] }} | <a href="{{ url_for('agents.view', agent_id=agent['id']) }}">View</a></p>
+    <h3>{{ agent["name"] }}</h3>
+    <p>{{ agent["description"] }}</p>
+    <p><b>Created on </b>{{ agent["created"].strftime("%d.%m.%Y") }} <b>by</b> {{ agent["username"] }} | <a href="{{ url_for("agents.view", agent_id=agent["id"]) }}">View</a></p>
     <form method="post">
-        <input type="hidden" name="list_id" value="{{ agent["id"] }}">
+        <input type="hidden" name="agent_id" value="{{ agent["id"] }}">
         <input type="submit" value="Choose">
 	</form>
 </article>

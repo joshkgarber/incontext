@@ -6,34 +6,35 @@ from werkzeug.exceptions import abort
 from incontext.auth import login_required
 from incontext.db import get_db, dict_factory
 from incontext.lists import get_user_lists, get_list
-from incontext.agents import get_agents
+from incontext.agents import get_agents, get_agent
+
 
 bp = Blueprint('contexts', __name__, url_prefix='/contexts')
 
 
-@bp.route('/')
+@bp.route("/")
 @login_required
 def index():
     db = get_db()
     contexts = db.execute(
-        'SELECT c.id, name, description, created, creator_id, username'
-        ' FROM contexts c JOIN users u ON c.creator_id = u.id'
-        ' ORDER BY created DESC'
+        "SELECT c.id, name, description, created, creator_id, username"
+        " FROM contexts c JOIN users u ON c.creator_id = u.id"
+        " WHERE creator_id = ?"
+        " ORDER BY created DESC",
+        (g.user["id"],)
     ).fetchall()
     return render_template('contexts/index.html', contexts=contexts)
 
 
-@bp.route('/create', methods=('GET', 'POST'))
+@bp.route('/new', methods=('GET', 'POST'))
 @login_required
-def create():
+def new():
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
         error = None
-
         if not name or not description:
             error = 'Name and description are required.'
-
         if error is not None:
             flash(error)
         else:
@@ -45,8 +46,7 @@ def create():
             )
             db.commit()
             return redirect(url_for('contexts.index'))
-
-    return render_template('contexts/create.html')
+    return render_template('contexts/new.html')
 
 
 @bp.route("/<int:context_id>/view", methods=("GET",))
@@ -58,32 +58,38 @@ def view(context_id):
     return render_template("contexts/view.html", context=context, lists=lists, agents=agents)
 
 
-@bp.route('/<int:id>/update', methods=('GET', 'POST'))
+@bp.route("/<int:context_id>/edit", methods=("GET", "POST"))
 @login_required
-def update(id): # id corresponds to the <int:id> in the route. Flask will capture the "id" from the url, ensure it's an int, and pass it as the id argument. To generate a URL to the update page, `url_for()` needs to be passed the `id` such as `url_for('context.update', id=context['id']).
-    context = get_context(id)
-
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
+def edit(context_id):
+    context = get_context(context_id)
+    if request.method == "POST":
+        name = request.form["name"]
+        description = request.form["description"]
         error = None
-
         if not name or not description:
-            error = 'Name and description are required.'
-
+            error = "Name and description are required."
         if error is not None:
             flash(error)
         else:
             db = get_db()
             db.execute(
-                'UPDATE contexts SET name = ?, description = ?'
-                ' WHERE id = ?',
-                (name, description, id)
+                "UPDATE contexts SET name = ?, description = ?"
+                " WHERE id = ?",
+                (name, description, context_id)
             )
             db.commit()
-            return redirect(url_for('contexts.index'))
-    
-    return render_template('contexts/update.html', context=context)
+            return redirect(url_for("contexts.view", context_id=context_id))
+    return render_template("contexts/edit.html", context=context)
+
+
+@bp.route('/<int:context_id>/delete', methods=('POST',))
+@login_required
+def delete(context_id):
+    get_context(context_id)
+    db = get_db()
+    db.execute('DELETE FROM contexts WHERE id = ?', (context_id,))
+    db.commit()
+    return redirect(url_for('contexts.index'))
 
 
 @bp.route("/<int:context_id>/new-list", methods=("GET", "POST"))
@@ -110,20 +116,50 @@ def new_list(context_id):
 def new_agent(context_id):
     context = get_context(context_id)
     if request.method == "POST":
-        # TODO
-        pass
+        agent_id = request.form["agent_id"]
+        agent = get_agent(agent_id)
+        db = get_db()
+        db.execute(
+            "INSERT INTO context_agent_relations (creator_id, context_id, agent_id)"
+            " VALUES (?, ?, ?)",
+            (g.user["id"], context_id, agent_id)
+        )
+        db.commit()
+        return redirect(url_for("contexts.view", context_id=context_id))
     agents = get_unrelated_agents(context_id)
     return render_template("contexts/new_agent.html", context=context, agents=agents)
 
 
-@bp.route('/<int:id>/delete', methods=('POST',))
+@bp.route("/<int:context_id>/remove-list", methods=("POST",))
 @login_required
-def delete(id):
-    get_context(id)
+def remove_list(context_id):
+    context = get_context(context_id)
+    list_id = request.form["list_id"]
+    alist = get_list(list_id)
     db = get_db()
-    db.execute('DELETE FROM contexts WHERE id = ?', (id,))
+    db.execute(
+        "DELETE FROM context_list_relations"
+        " WHERE context_id = ? AND list_id = ?",
+        (context_id, list_id)
+    )
     db.commit()
-    return redirect(url_for('contexts.index'))
+    return redirect(url_for("contexts.view", context_id=context_id))
+
+
+@bp.route("/<int:context_id>/remove-agent", methods=("POST",))
+@login_required
+def remove_agent(context_id):
+    context = get_context(context_id)
+    agent_id = request.form["agent_id"]
+    agent = get_agent(agent_id)
+    db = get_db()
+    db.execute(
+        "DELETE FROM context_agent_relations"
+        " WHERE context_id = ? AND agent_id = ?",
+        (context_id, agent_id)
+    )
+    db.commit()
+    return redirect(url_for("contexts.view", context_id=context_id))
 
 
 def get_context(context_id, check_author=True): # The check_author parameter means this function is also useful for getting the context in general, not just for the update view e.g. displaying a single context on a "view context" page.
@@ -133,13 +169,10 @@ def get_context(context_id, check_author=True): # The check_author parameter mea
         ' WHERE c.id = ?',
         (context_id,)
     ).fetchone()
-
     if context is None:
         abort(404, f"Context id {id} doesn't exist.") # abort() will raise a special exception that returns an HTTP status code. It takes an optional message to show with the error. 404 means "Not Found".
-
     if check_author and context['creator_id'] != g.user['id']:
         abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
-
     return context
 
 
@@ -180,10 +213,10 @@ def get_unrelated_lists(context_id):
     context_list_ids = [context_list["id"] for context_list in context_lists]
     user_lists = get_user_lists()
     unrelated_lists = [user_list for user_list in user_lists if user_list["id"] not in context_list_ids]
-    for unrelated_list in unrelated_lists:
-        if unrelated_list["master_list_id"]:
-            unrelated_list["name"] = unrelated_list["master_list_name"] + " (tethered)"
-            unrelated_list["description"] = unrelated_list["master_list_description"]
+    # for unrelated_list in unrelated_lists:
+    #     if unrelated_list["master_list_id"]:
+    #         unrelated_list["name"] = unrelated_list["master_list_name"] + " (tethered)"
+    #         unrelated_list["description"] = unrelated_list["master_list_description"]
     return unrelated_lists
 
 

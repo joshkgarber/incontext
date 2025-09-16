@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block header %}
+	<h1>{% block title %}Edit Context "{{ context["name"] }}"{% endblock %}</h1>
+{% endblock %}
+	
+{% block main %}
+	<form method="post">
+		<label for="name">Name
+			<input id="name" name="name" value="{{ request.form["name"] or context["name"] }}" required>
+		</label>
+		<label for="description">Description
+			<textarea id="description" name="description">{{ request.form["description"] or context["description"] }}</textarea>
+		</label>
+		<input type="submit" value="Save">
+	</form>
+	<hr>
+	<form method="post" action="{{ url_for("contexts.delete", context_id=context["id"]) }}">
+		<input type="submit" value="Delete">
+	</form>
+{% endblock %}
