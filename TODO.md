@@ -5,7 +5,7 @@
 - [x] Update the schema
 - [x] Write the requirements and tests along with them as you go.
 - [x] Run a coverage report
-- [ ] Deploy
+- [x] Deploy
 
 ## Requirements
 
