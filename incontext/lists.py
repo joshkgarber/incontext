@@ -6,8 +6,6 @@ from werkzeug.exceptions import abort
 from incontext.auth import login_required
 from incontext.db import get_db
 from incontext.db import dict_factory
-from incontext.master_lists import get_master_lists
-from incontext.master_lists import get_master_list
 
 
 bp = Blueprint('lists', __name__, url_prefix='/lists')
@@ -44,54 +42,10 @@ def new():
     return render_template('lists/new.html')
 
 
-@bp.route("/new-tethered", methods=("GET", "POST"))
-@login_required
-def new_tethered():
-    if request.method == "POST":
-        name = request.form['name']
-        description = request.form['description']
-        master_list_id = request.form["master_list_id"]
-        master_list = get_master_list(master_list_id, False)
-        error = None
-        if not name:
-            error = 'Name is required.'
-        if not master_list_id:
-            error = "Master list ID is required."
-        if error is not None:
-            flash(error)
-        db = get_db()
-        cur = db.cursor()
-        # Create a new list and retrieve the ID
-        cur.execute(
-            'INSERT INTO lists (name, description, creator_id, tethered)'
-            ' VALUES (?, ?, ?, 1)',
-            (name, description, g.user['id'])
-        )
-        new_list_id = cur.lastrowid
-        # Record the tether
-        cur.execute(
-            "INSERT INTO list_tethers(list_id, master_list_id)"
-            " VALUES (?, ?)",
-            (new_list_id, master_list_id)
-        )
-        db.commit()
-        # Redirect to the list's view view
-        return redirect(url_for('lists.view', list_id=new_list_id))
-    master_lists = get_master_lists()
-    return render_template("lists/new_tethered.html", master_lists=master_lists)
-
-
 @bp.route('/<int:list_id>/view')
 @login_required
 def view(list_id):
     alist = get_list_with_items_and_details(list_id)
-    # if alist["tethered"]:
-    #     if len(alist["master_items"]) > 0:
-    #         master_item = alist["master_items"][0]
-    #         relations = master_item["master_detail_relations"]
-    #         detail_names = [relation["master_detail_name"] for relation in relations]
-    #     else:
-    #         detail_names = []
     return render_template('lists/view.html', alist=alist)
 
 
@@ -99,7 +53,6 @@ def view(list_id):
 @login_required
 def edit(list_id):
     alist = get_list(list_id)
-    tether = get_list_tether(list_id)
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
@@ -117,7 +70,7 @@ def edit(list_id):
             )
             db.commit()
             return redirect(url_for('lists.index'))
-    return render_template('lists/edit.html', alist=alist, tether=tether)
+    return render_template('lists/edit.html', alist=alist)
 
 
 @bp.route('/<int:list_id>/delete', methods=('POST',))
@@ -150,8 +103,6 @@ def delete(list_id):
     db.execute('DELETE FROM list_item_relations WHERE list_id = ?',(list_id,))
     # Delete list-detail relations
     db.execute('DELETE FROM list_detail_relations WHERE list_id = ?', (list_id,))
-    # Delete list_tethers
-    db.execute("DELETE FROM list_tethers WHERE list_id = ?", (list_id,))
     # Delete list
     db.execute('DELETE FROM lists WHERE id = ?', (list_id,))
     db.commit()
@@ -162,21 +113,10 @@ def delete(list_id):
 @login_required
 def new_item(list_id):
     if request.method == 'POST':
-        master_list_id = get_db().execute(
-            "SELECT master_list_id FROM list_tethers"
-            " WHERE list_id = ?",
-            (list_id,)
-        ).fetchone()
-        if master_list_id:
-            master_list_id = master_list_id["master_list_id"]
         name = request.form['name']
         detail_fields = []
         details = None
-        if master_list_id:
-            master_list = get_master_list(master_list_id, False)
-            details = [master_detail for master_detail in master_list['master_details']]
-        else:
-            details = get_list_details(list_id)
+        details = get_list_details(list_id)
         for detail in details:
             detail_id = detail['id']
             detail_content = request.form[str(detail_id)]
@@ -201,38 +141,17 @@ def new_item(list_id):
                 (list_id, item_id)
             )
             relations = []
-            if master_list_id:
-                for detail_field in detail_fields:
-                    relations.append([list_id, item_id] + detail_field)
-                cur.executemany(
-                    "INSERT INTO untethered_content (list_id, item_id, master_detail_id, content)"
-                    " VALUES(?, ?, ?, ?)",
-                    relations
-                )
-            else:
-                for detail_field in detail_fields:
-                    relations.append([item_id] + detail_field)
-                cur.executemany(
-                    'INSERT INTO item_detail_relations (item_id, detail_id, content)'
-                    ' VALUES(?, ?, ?)',
-                    relations
-                )
+            for detail_field in detail_fields:
+                relations.append([item_id] + detail_field)
+            cur.executemany(
+                'INSERT INTO item_detail_relations (item_id, detail_id, content)'
+                ' VALUES(?, ?, ?)',
+                relations
+            )
             db.commit()
             return redirect(url_for('lists.view', list_id=list_id))
     alist = get_list(list_id)
     details = get_list_details(list_id)
-    if alist["tethered"]:
-        db = get_db()
-        master_list_id = db.execute(
-            "SELECT master_list_id"
-            " FROM list_tethers"
-            " WHERE list_id = ?",
-            (list_id,)
-        ).fetchone()["master_list_id"]
-        master_list = get_master_list(master_list_id, False)
-        alist = master_list
-        alist["name"] = alist["name"] + " (tethered)"
-        details = master_list["master_details"]
     return render_template('lists/items/new.html', alist=alist, details=details)
 
 
@@ -248,25 +167,12 @@ def view_item(list_id, item_id):
 @login_required
 def edit_item(list_id, item_id):
     alist = get_list(list_id)
-    master_list_id = get_db().execute(
-        "SELECT master_list_id FROM list_tethers"
-        " WHERE list_id = ?",
-        (list_id,)
-    ).fetchone()
-    if master_list_id:
-        master_list = get_master_list(master_list_id["master_list_id"], False)
-        alist["name"] = master_list["name"] + " (tethered)"
-        alist["description"] = master_list["description"]
     item, details = get_list_item(list_id, item_id)
     if request.method == 'POST':
         name = request.form['name']
         detail_fields = []
         details = None
-        if master_list_id:
-            master_list = get_master_list(master_list_id["master_list_id"], False)
-            details = [master_detail for master_detail in master_list['master_details']]
-        else:
-            details = get_list_details(list_id)
+        details = get_list_details(list_id)
         for detail in details:
             detail_id = detail['id']
             detail_content = request.form[str(detail_id)]
@@ -283,25 +189,13 @@ def edit_item(list_id, item_id):
                 ' WHERE id = ?',
                 (name, item_id)
             )
-            if master_list_id:
-                for detail_field in detail_fields:
-                    detail_field.append(list_id)    
-                db.executemany(
-                    "UPDATE untethered_content"
-                    " SET content = ?"
-                    " WHERE item_id = ?"
-                    " AND master_detail_id = ?"
-                    " AND list_id = ?",
-                    detail_fields
-                )
-            else:
-                db.executemany(
-                    'UPDATE item_detail_relations'
-                    ' SET content = ?'
-                    ' WHERE item_id = ?'
-                    ' AND detail_id = ?',
-                    detail_fields
-                )
+            db.executemany(
+                'UPDATE item_detail_relations'
+                ' SET content = ?'
+                ' WHERE item_id = ?'
+                ' AND detail_id = ?',
+                detail_fields
+            )
             db.commit()
             return redirect(url_for('lists.view', list_id=list_id))
     return render_template('lists/items/edit.html', alist=alist, item=item, details=details)
@@ -319,11 +213,7 @@ def delete_item(list_id, item_id):
         ' WHERE list_id = ? AND item_id = ?',
         (list_id, item_id)
     )
-    tethered = True if alist["tethered"] else False
-    if tethered:
-        db.execute("DELETE FROM untethered_content WHERE item_id = ?", (item_id,))
-    else:
-        db.execute('DELETE FROM item_detail_relations WHERE item_id = ?', (item_id,))
+    db.execute('DELETE FROM item_detail_relations WHERE item_id = ?', (item_id,))
     db.commit()
     return redirect(url_for('lists.view', list_id=list_id))
 
@@ -332,8 +222,6 @@ def delete_item(list_id, item_id):
 @login_required
 def new_detail(list_id):
     alist = get_list(list_id)
-    if alist["tethered"]:
-        abort(403)
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
@@ -410,13 +298,9 @@ def get_user_lists():
     db = get_db()
     db.row_factory = dict_factory
     user_lists = db.execute(
-        'SELECT l.id, l.name, l.description, l.created, t.master_list_id, m.name AS master_list_name, m.description AS master_list_description'
-        ' FROM lists l'
-        " LEFT JOIN list_tethers t"
-        " ON t.list_id = l.id"
-        " LEFT JOIN master_lists m"
-        " ON m.id = t.master_list_id"
-        " WHERE l.creator_id = ?",
+        'SELECT id, name, description, created'
+        ' FROM lists'
+        " WHERE creator_id = ?",
         (g.user['id'],)
     ).fetchall()
     return user_lists
@@ -426,11 +310,9 @@ def get_list(list_id, check_creator=True):
     db = get_db()
     db.row_factory = dict_factory
     alist = get_db().execute(
-        'SELECT l.id, l.name, l.description, l.tethered, l.creator_id, t.master_list_id'
-        ' FROM lists l'
-        " LEFT JOIN list_tethers t"
-        " ON t.list_id = l.id"
-        ' WHERE l.id = ?',
+        'SELECT id, name, description, creator_id'
+        ' FROM lists'
+        ' WHERE id = ?',
         (list_id,)
     ).fetchone()
     if alist is None:
@@ -450,75 +332,29 @@ def get_list_with_items_and_details(list_id, check_creator=True):
             abort(403)
     db = get_db()
     db.row_factory = dict_factory
-    if alist["tethered"]:
-        master_items = db.execute(
-            "SELECT mi.id, mi.name, mi.created"
-            " FROM master_items mi"
-            " JOIN master_list_item_relations mlir"
-            " ON mlir.master_item_id = mi.id"
-            " WHERE mlir.master_list_id = ?",
-            (alist["master_list_id"],)
-        ).fetchall()
-        master_details = db.execute(
-            "SELECT md.id, md.name, md.description"
-            " FROM master_details md"
-            " JOIN master_list_detail_relations mldr"
-            " ON mldr.master_detail_id = md.id"
-            " WHERE mldr.master_list_id = ?",
-            (alist["master_list_id"],)
-        ).fetchall()
-        alist["details"] = master_details
-        for master_item in master_items:
-            master_item["master_detail_relations"] = []
-            for master_detail in master_details:
-                master_detail_relation = db.execute(
-                    "SELECT md.id AS master_detail_id, md.name AS master_detail_name, midr.master_content"
-                    " FROM master_details md"
-                    " JOIN master_item_detail_relations midr ON md.id = midr.master_detail_id"
-                    " WHERE md.id = ?"
-                    " AND midr.master_item_id = ?",
-                    (master_detail["id"], master_item["id"],)
-                ).fetchone()
-                master_item["master_detail_relations"].append(master_detail_relation)
-        alist["master_items"] = master_items
-        items = get_list_items(list_id)
-        for item in items:
-            item["untethered_contents"] = []
-            for master_detail in master_details:
-                untethered_content = db.execute(
-                    "SELECT md.id AS master_detail_id, md.name AS master_detail_name, ut.content AS untethered_content"
-                    " FROM master_details md"
-                    " JOIN untethered_content ut ON ut.master_detail_id = md.id"
-                    " WHERE md.id = ?"
-                    " AND ut.item_id = ?",
-                    (master_detail["id"], item["id"],)
-                ).fetchone()
-                item["untethered_contents"].append(untethered_content)
-        alist["items"] = items
-    else:
-        details = db.execute(
-            "SELECT d.id, d.name, d.description"
-            " FROM details d"
-            " JOIN list_detail_relations ldr"
-            " ON ldr.detail_id = d.id"
-            " WHERE ldr.list_id = ?",
-            (list_id,)
-        ).fetchall()
-        alist["details"] = details
-        items = get_list_items(list_id)
-        for item in items:
-            item["relations"] = []
-            for detail in details:
-                item_detail_relation = db.execute(
-                    "SELECT d.id, d.name, r.content"
-                    " FROM details d JOIN item_detail_relations r"
-                    " ON d.id = r.detail_id"
-                    " WHERE d.id = ?"
-                    " AND r.item_id = ?",
-                    (detail["id"], item["id"],) 
-                ).fetchone()
-                item["relations"].append(item_detail_relation)
-        alist["items"] = items
+    details = db.execute(
+        "SELECT d.id, d.name, d.description"
+        " FROM details d"
+        " JOIN list_detail_relations ldr"
+        " ON ldr.detail_id = d.id"
+        " WHERE ldr.list_id = ?",
+        (list_id,)
+    ).fetchall()
+    alist["details"] = details
+    items = get_list_items(list_id)
+    for item in items:
+        item["relations"] = []
+        for detail in details:
+            item_detail_relation = db.execute(
+                "SELECT d.id, d.name, r.content"
+                " FROM details d JOIN item_detail_relations r"
+                " ON d.id = r.detail_id"
+                " WHERE d.id = ?"
+                " AND r.item_id = ?",
+                (detail["id"], item["id"],) 
+            ).fetchone()
+            item["relations"].append(item_detail_relation)
+    alist["items"] = items
     return alist
 
 
@@ -528,15 +364,6 @@ def get_list_items_with_details(list_id, check_creator=True):
         if list_creator_id != g.user['id']:
             abort(403)
     alist = get_list(list_id)
-    tethered = False
-    if alist["tethered"]:
-        tethered = True
-        master_list_id = get_db().execute(
-            "SELECT master_list_id FROM list_tethers"
-            " WHERE list_id = ?",
-            (list_id,)
-        ).fetchone()["master_list_id"]
-        alist["master_list"] = get_master_list(master_list_id, False)
     db = get_db()
     items = db.execute(
         'SELECT i.id, i.name, i.created'
@@ -545,40 +372,21 @@ def get_list_items_with_details(list_id, check_creator=True):
         ' WHERE r.list_id = ?',
         (list_id,)
     ).fetchall()
-    if tethered:
-        details = db.execute(
-            'SELECT d.id, d.name, d.description'
-            ' FROM master_details d'
-            ' JOIN master_list_detail_relations r ON r.master_detail_id = d.id'
-            ' WHERE r.master_list_id = ?',
-            (master_list_id,)
-        ).fetchall()
-    else:
-        details = db.execute(
-            'SELECT d.id, d.name, d.description'
-            ' FROM details d'
-            ' JOIN list_detail_relations r ON r.detail_id = d.id'
-            ' WHERE r.list_id = ?',
-            (list_id,)
-        ).fetchall()
+    details = db.execute(
+        'SELECT d.id, d.name, d.description'
+        ' FROM details d'
+        ' JOIN list_detail_relations r ON r.detail_id = d.id'
+        ' WHERE r.list_id = ?',
+        (list_id,)
+    ).fetchall()
     item_ids = [item['id'] for item in items]
     placeholders = f'{"?, " * len(item_ids)}'[:-2]
-    if tethered:
-        data = item_ids + [list_id]
-        relations = db.execute(
-            'SELECT r.item_id, r.master_detail_id as detail_id, r.content'
-            ' FROM untethered_content r'
-            f' WHERE r.item_id IN ({placeholders})'
-            "  AND r.list_id = ?",
-            data
-        ).fetchall()
-    else:
-        relations = db.execute(
-            'SELECT r.item_id, r.detail_id, r.content'
-            ' FROM item_detail_relations r'
-            f' WHERE r.item_id IN ({placeholders})',
-            item_ids
-        ).fetchall()
+    relations = db.execute(
+        'SELECT r.item_id, r.detail_id, r.content'
+        ' FROM item_detail_relations r'
+        f' WHERE r.item_id IN ({placeholders})',
+        item_ids
+    ).fetchall()
     list_items = []
     for item in items:
         this_item = {}
@@ -619,12 +427,6 @@ def get_list_item(list_id, item_id, check_relation=True):
         if item_list_id != list_id:
             abort(400)
     db = get_db()
-    master_list_id = db.execute(
-        "SELECT master_list_id FROM list_tethers"
-        " WHERE list_id = ?",
-        (list_id,)
-    ).fetchone()
-    tethered = True if master_list_id is not None else False
     item = db.execute(
         'SELECT i.id, i.name, i.created, u.username'
         ' FROM items i'
@@ -632,24 +434,13 @@ def get_list_item(list_id, item_id, check_relation=True):
         ' WHERE i.id = ?',
         (item_id,)
     ).fetchone()
-    if tethered:
-        details = db.execute(
-            'SELECT d.name, d.id, u.content'
-            ' FROM master_details d'
-            " LEFT JOIN untethered_content u"
-            " ON d.id = u.master_detail_id"
-            " WHERE u.item_id = ?"
-            " AND u.list_id = ?",
-            (item_id, list_id)
-        ).fetchall()
-    else:
-        details = db.execute(
-            'SELECT d.id, r.content, d.name, d.description'
-            ' FROM item_detail_relations r'
-            ' JOIN details d ON r.detail_id = d.id'
-            ' WHERE r.item_id = ?',
-            (item_id,)
-        ).fetchall()
+    details = db.execute(
+        'SELECT d.id, r.content, d.name, d.description'
+        ' FROM item_detail_relations r'
+        ' JOIN details d ON r.detail_id = d.id'
+        ' WHERE r.item_id = ?',
+        (item_id,)
+    ).fetchall()
     return item, details
 
 
@@ -715,14 +506,3 @@ def get_detail_list_id(detail_id):
     if list_id:
         return list_id['list_id']
     abort(404)
-
-
-def get_list_tether(list_id):
-    db = get_db()
-    tether = db.execute(
-        "SELECT master_list_id"
-        " FROM list_tethers"
-        " WHERE list_id = ?",
-        (list_id,)
-    ).fetchone()
-    return tether

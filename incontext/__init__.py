@@ -29,26 +29,20 @@ def create_app(test_config=None):
         pass
 
     from . import db
-    db.init_app(app) # calling the function to register a couple of database-related things with the app
+    db.init_app(app)
 
     from . import auth
-    app.register_blueprint(auth.bp) # has views for login, register, and logout.
+    app.register_blueprint(auth.bp)
 
     from . import home
     app.register_blueprint(home.bp)
-    app.add_url_rule('/', endpoint='index') # you can now use `url_for('index')` for `url_for('home.index')` because there is no url prefix for the home bp.
+    app.add_url_rule('/', endpoint='index')
 
     from . import contexts
     app.register_blueprint(contexts.bp)
 
-    from . import master_lists
-    app.register_blueprint(master_lists.bp)
-
     from . import lists
     app.register_blueprint(lists.bp)
-
-    from . import master_agents
-    app.register_blueprint(master_agents.bp)
 
     from . import agents
     app.register_blueprint(agents.bp)

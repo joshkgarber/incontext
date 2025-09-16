@@ -59,3 +59,6 @@
 - [ ] Make agent descriptions not required
 - [ ] Improve agent model id validation to only accept available ids
 - [ ] Fix data validation tests. checking the flash error text in response.data is giving false positives. test_agents.py::test_new_post it's saying description is required when it's not (it is on the front end but not on the back end.). Applies to all data validation tests including lists and contexts (new and edit) (post requests) (You could use specific messages for each field.
+- [ ] Remove all explanatory comments
+- [ ] Remove db.row_factory = dict_factory as it's configured in get_db() now
+- [ ] Replace ' with " everywhere

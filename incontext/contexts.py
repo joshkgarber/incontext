@@ -180,18 +180,12 @@ def get_context_lists(context_id):
     db = get_db()
     db.row_factory = dict_factory
     lists = db.execute(
-        "SELECT r.list_id AS id, l.name, l.description, m.id AS master_list_id, m.name AS master_list_name, m.description AS master_list_description"
+        "SELECT r.list_id AS id, l.name, l.description"
         " FROM context_list_relations r"
         " JOIN lists l ON l.id = r.list_id"
-        " LEFT JOIN list_tethers t ON t.list_id = l.id"
-        " LEFT JOIN master_lists m ON m.id = t.master_list_id"
         " WHERE context_id = ?",
         (context_id,)
     ).fetchall()
-    for alist in lists:    
-        if alist["master_list_id"]:
-            alist["name"] = alist["master_list_name"]
-            alist["description"] = alist["master_list_description"]
     return lists
 
 
@@ -213,16 +207,12 @@ def get_unrelated_lists(context_id):
     context_list_ids = [context_list["id"] for context_list in context_lists]
     user_lists = get_user_lists()
     unrelated_lists = [user_list for user_list in user_lists if user_list["id"] not in context_list_ids]
-    # for unrelated_list in unrelated_lists:
-    #     if unrelated_list["master_list_id"]:
-    #         unrelated_list["name"] = unrelated_list["master_list_name"] + " (tethered)"
-    #         unrelated_list["description"] = unrelated_list["master_list_description"]
     return unrelated_lists
 
 
 def get_unrelated_agents(context_id):
     db = get_db()
-    agents, t = get_agents()
+    agents = get_agents()
     context_agents = get_context_agents(context_id)
     context_agent_ids = None
     if context_agents is not None:

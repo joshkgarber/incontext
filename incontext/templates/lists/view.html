@@ -3,15 +3,12 @@
 {% block header %}
 <h1>{% block title %}List: {{ alist['name'] }}{% endblock %}</h1>
 <p>{{ alist['description'] }} <a href="{{ url_for('lists.edit', list_id=alist['id']) }}">Edit</a></p>
-{% if alist["tethered"] %}
-<p><strong>This list is tethered to a master list.</strong> <a href="{{ url_for('master_lists.view', master_list_id=alist["master_list_id"]) }}">View Master</a></p>
-{% endif %}
 {% endblock %}
 
 {% block main %}
 <section id="items">
 	<h2>Items</h2>
-{% if alist["items"]|length == 0 and alist["master_items"]|length == 0 %}
+{% if alist["items"]|length == 0 %}
 	<p>Empty</p>
 	<a href="{{ url_for("lists.new_item", list_id=alist["id"]) }}">New Item</a>
 </section>
@@ -26,24 +23,6 @@
 			{% endfor %}
 			<th>Created</th>
 		</tr>
-        {% for master_item in alist["master_items"] %}
-			<td>{{ master_item['id'] }}</td>
-			{% if master_item['name']|length > 30 %}
-			<td>{{ master_item['name']|truncate(30,false,'...') }}</td>
-			{% else %}
-			<td>{{ master_item['name'] }}</td>
-			{% endif %}
-			{% for master_detail in master_item['master_details'] %}
-			{% if master_detail['content']|length > 30 %}
-			<td>{{ master_detail['content']|truncate(30,false,'...') }}</td>
-			{% else %}
-			<td>{{ master_detail['content'] }}</td>
-			{% endif %}
-			{% endfor %}
-			<td>{{ master_item['created'].strftime('%d.%m.%Y') }}</td>
-			<td><a href="{{ url_for('lists.view_item', list_id=alist['id'], item_id=master_item['id']) }}">View</a></td>
-			<td>(tethered)</td>
-        {% endfor %}
 		{% for item in alist["items"] %}
 		<tr>
 			<td>{{ item["id"] }}</td>

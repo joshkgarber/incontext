@@ -35,24 +35,8 @@ def test_data_entry(app):
         db = get_db()
         user_count = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
         assert user_count == 4
-        master_list_count = db.execute("SELECT COUNT(*) AS count FROM master_lists").fetchone()["count"]
-        assert master_list_count == 2
-        master_item_count = db.execute('SELECT COUNT(*) AS count FROM master_items').fetchone()['count']
-        assert master_item_count == 3
-        master_detail_count = db.execute('SELECT COUNT(*) AS count FROM master_details').fetchone()['count']
-        assert master_detail_count == 3
-        master_item_detail_relation_count = db.execute('SELECT COUNT(*) AS count FROM master_item_detail_relations').fetchone()['count']
-        assert master_item_detail_relation_count == 5
-        master_list_item_relation_count = db.execute('SELECT COUNT(*) AS count FROM master_list_item_relations').fetchone()['count']
-        assert master_list_item_relation_count == 3
-        master_list_detail_relation_count = db.execute('SELECT COUNT(*) AS count FROM master_list_detail_relations').fetchone()['count']
-        assert master_list_detail_relation_count == 3
-        master_agent_count = db.execute("SELECT COUNT(*) AS count FROM master_agents").fetchone()["count"]
-        assert master_agent_count == 3
         agent_count = db.execute("SELECT COUNT(*) AS count FROM agents").fetchone()["count"]
-        assert agent_count == 3
-        tethered_agent_count = db.execute("SELECT COUNT(*) AS count FROM tethered_agents").fetchone()["count"]
-        assert tethered_agent_count == 3
+        assert agent_count == 4
 
 
 def test_admin_login(client, auth):

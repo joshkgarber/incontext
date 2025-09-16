@@ -2,9 +2,6 @@
 
 {% block header %}
 	<h1>{% block title %}Edit List: {{ alist['name'] }}{% endblock %}</h1>
-    {% if tethered %}
-    <p>(Tethered: <a href="{{ url_for("master_lists.view", master_list_id=tether["master_list_id"]) }}">View Master)</a></p>
-    {% endif %}
 {% endblock %}
 	
 {% block main %}

@@ -11,7 +11,7 @@
 {% block main %}
 <form method="post">
 	<label for="name">Name
-		<input id="name" name="name" value="{{ request.form['name'] or item['name'] }}" required> <!-- When the form hasn't been submitted, the original `agent` data appears, but if invalid form data was posted it will be displayed so that the user can fix the error. -->
+		<input id="name" name="name" value="{{ request.form['name'] or item['name'] }}" required>
 	</label>
 	{% for detail in details %}
 	<label for="{{ detail['id'] }}">{{ detail['name'] }}

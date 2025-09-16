@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block header %}
 <h1>{% block title %}New Agent{% endblock %}</h1>
@@ -7,10 +7,10 @@
 {% block main %}
 <form method="post">
 	<label for="name">Name
-		<input name="name" id="name" value="{{ request.form['name'] }}" required>
+		<input name="name" id="name" value="{{ request.form["name"] }}" required>
 	</label>
 	<label for="description">Description
-		<textarea name="description" id="description" required>{{ request.form['description'] }}</textarea>
+		<textarea name="description" id="description" required>{{ request.form["description"] }}</textarea>
 	</label>
 	<label for="model">Model
 		<select name="model_id" id="model" required autofocus>
@@ -20,10 +20,10 @@
 		</select>
 	</label>
 	<label for="role">Role
-		<input name="role" id="role" value="{{ request.form['role'] }}" required>
+		<input name="role" id="role" value="{{ request.form["role"] }}" required>
 	</label>
 	<label for="instructions">Instructions
-		<textarea name="instructions" id="instructions" required>{{ request.form['instructions'] }}</textarea>
+		<textarea name="instructions" id="instructions" required>{{ request.form["instructions"] }}</textarea>
 	</label>
 	<input type="submit" value="Save">
 </form>
@@ -31,7 +31,7 @@
 <script>
 	const opts = document.querySelectorAll('#model option');
 	opts.forEach((opt) => {
-		if (opt.value == {{ request.form['model_id'] }}) opt.selected = true;
+		if (opt.value == {{ request.form["model_id"] }}) opt.selected = true;
 	});
 </script>
 {% endif %}

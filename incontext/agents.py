@@ -5,9 +5,6 @@ from werkzeug.exceptions import abort
 
 from incontext.auth import login_required
 from incontext.db import get_db, dict_factory
-from incontext.master_agents import get_agent_models
-from incontext.master_agents import get_master_agents
-from incontext.master_agents import get_master_agent
 
 
 bp = Blueprint('agents', __name__, url_prefix='/agents')
@@ -16,8 +13,8 @@ bp = Blueprint('agents', __name__, url_prefix='/agents')
 @bp.route('/')
 @login_required
 def index():
-    agents, tethered_agents = get_agents()
-    return render_template('agents/index.html', agents=agents, tethered_agents=tethered_agents)
+    agents = get_agents()
+    return render_template('agents/index.html', agents=agents)
 
 
 @bp.route('/new', methods=('GET', 'POST'))
@@ -51,23 +48,6 @@ def new():
             db.commit()
             return redirect(url_for('agents.index'))
     return render_template('agents/new.html', agent_models=agent_models)
-
-
-@bp.route("/new-tethered", methods=("GET", "POST"))
-@login_required
-def new_tethered():
-    if request.method == "POST":
-        requested_master_agent = get_master_agent(request.form["master_agent_id"], False)
-        db = get_db()
-        db.execute(
-            "INSERT INTO tethered_agents (creator_id, master_agent_id)"
-            " VALUES (?, ?)",
-            (g.user["id"], request.form["master_agent_id"])
-        )
-        db.commit()
-        return redirect(url_for("agents.index"))
-    master_agents = get_master_agents()
-    return render_template("agents/new_tethered.html", master_agents=master_agents)
 
 
 @bp.route('/<int:agent_id>/view')
@@ -122,16 +102,6 @@ def delete(agent_id):
     return redirect(url_for('agents.index'))
 
 
-@bp.route("<int:tethered_agent_id>/delete-tethered", methods=("POST",))
-@login_required
-def delete_tethered(tethered_agent_id):
-    tethered_agent = get_tethered_agent(tethered_agent_id)
-    db = get_db()
-    db.execute("DELETE FROM tethered_agents WHERE id = ?", (tethered_agent_id,))
-    db.commit()
-    return redirect(url_for('agents.index'))
-
-
 def get_agents():
     db = get_db()
     agents = db.execute(
@@ -140,15 +110,7 @@ def get_agents():
         " WHERE creator_id = ?",
         (g.user["id"],)
     ).fetchall()
-    tethered_agents = db.execute(
-        "SELECT ta.id, ma.name, ma.description, ta.created, ma.id as master_agent_id"
-        " FROM master_agents ma"
-        " JOIN tethered_agents ta"
-        " ON ma.id = ta.master_agent_id"
-        " WHERE ta.creator_id = ?",
-        (g.user["id"],)
-    )
-    return agents, tethered_agents
+    return agents
 
 
 def get_agent(agent_id, check_access=True):
@@ -169,17 +131,10 @@ def get_agent(agent_id, check_access=True):
     return agent
 
 
-def get_tethered_agent(tethered_agent_id, check_access=True):
+def get_agent_models():
     db = get_db()
-    tethered_agent = db.execute(
-        'SELECT ta.creator_id'
-        ' FROM tethered_agents ta'
-        ' WHERE ta.id = ?',
-        (tethered_agent_id,)
-    ).fetchone()
-    if tethered_agent is None:
-        abort(404)
-    if check_access:
-        if tethered_agent['creator_id'] != g.user['id']:
-            abort(403)
-    return tethered_agent
+    agent_models = db.execute(
+        "SELECT id, provider_name, provider_code, model_name, model_code, model_description"
+        " FROM agent_models"
+    ).fetchall()
+    return agent_models

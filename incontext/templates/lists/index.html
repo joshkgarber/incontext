@@ -6,7 +6,6 @@
 <p>Empty</p>
 {% endif %}
 <p><a href="{{ url_for('lists.new') }}">New</a></p>
-<p><a href="{{ url_for('lists.new_tethered') }}">New Tethered List</a></p>
 {% endblock %}
 {% block main %}
 {% for alist in lists %}
@@ -14,9 +13,6 @@
     <h2>{{ alist['name'] }}</h2>
     <p>{{ alist['description'] }}</p>
     <p><b>Created: </b>{{ alist['created'].strftime('%d.%m.%Y') }} | <a href="{{ url_for('lists.view', list_id=alist['id']) }}">View</a> | <a href="{{ url_for('lists.edit', list_id=alist['id']) }}">Edit</a></p>
-    {% if alist["master_list_id"] %}
-    <p><strong>(Tethered</strong> <a href="{{ url_for('master_lists.view', master_list_id=alist["master_list_id"]) }}">View Master<strong>)</strong></a></p>
-    {% endif %}
 	{% if not loop.last %}
 	<hr>
 	{% endif %}

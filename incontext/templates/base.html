@@ -15,10 +15,6 @@
 				{% if g.user %}
 				<ul>
 					<li><span><a href="{{ url_for('contexts.index') }}">Contexts</a></li>
-                    {% if g.user["admin"] %}
-					<li><span><a href="{{ url_for('master_lists.index') }}">Master Lists</a></li>
-					<li><span><a href="{{ url_for('master_agents.index') }}">Master Agents</a></li>
-                    {% endif %}
 					<li><span><a href="{{ url_for('lists.index') }}">Lists</a></li>
 					<li><span><a href="{{ url_for('agents.index') }}">Agents</a></li>
 				</ul>

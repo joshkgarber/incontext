@@ -587,6 +587,3 @@ def test_remove_agent(client, auth, app):
                 assert car["agent_id"] != 1
             assert car in context_agent_relations_before
         assert len(context_agent_relations_after) == len(context_agent_relations_before) - 1
-
-
-
