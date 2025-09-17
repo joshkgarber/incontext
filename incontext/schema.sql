@@ -147,10 +147,8 @@ CREATE TABLE agent_models (
 
 CREATE TABLE conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    creator_id INTEGER NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    name TEXT NOT NULL,
-    FOREIGN KEY (creator_id) REFERENCES users (id)
+    name TEXT NOT NULL
 );
 
 

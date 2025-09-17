@@ -24,6 +24,13 @@ VALUES
     (2, 1, 2);
 
 
+INSERT INTO context_conversation_relations (context_id, conversation_id)
+VALUES
+    (1, 1),
+    (1, 2),
+    (3, 3);
+
+
 INSERT INTO items (creator_id, name)
 VALUES
 	(2, "item name 1"),
@@ -101,9 +108,11 @@ VALUES
 	(2, "agent name 4", "agent description 4", 5, "agent role 4", "agent instructions 4");
 
 
-INSERT INTO conversations (name, creator_id, created)
+INSERT INTO conversations (name)
 VALUES
-	('test name', 2, '2025-01-01 00:00:00');			
+    ("conversation name 1"),
+    ("conversation name 2"),
+    ("conversation name 3");
 
 
 INSERT INTO messages (conversation_id, content, human)
@@ -115,4 +124,6 @@ VALUES
 
 INSERT INTO conversation_agent_relations (conversation_id, agent_id)
 VALUES
-	(1, 1);
+	(1, 1),
+	(2, 2),
+	(3, 3);

@@ -172,7 +172,7 @@ def get_context(context_id, check_author=True): # The check_author parameter mea
         (context_id,)
     ).fetchone()
     if context is None:
-        abort(404, f"Context id {id} doesn't exist.") # abort() will raise a special exception that returns an HTTP status code. It takes an optional message to show with the error. 404 means "Not Found".
+        abort(404, f"Context id {context_id} doesn't exist.") # abort() will raise a special exception that returns an HTTP status code. It takes an optional message to show with the error. 404 means "Not Found".
     if check_author and context['creator_id'] != g.user['id']:
         abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
     return context

@@ -7,6 +7,15 @@
 {% endblock %}
 
 {% block main %}
+    <section class="conversations">
+    </section>
+        <h2>Conversations</h2>
+        <a href="{{ url_for("conversations.new", context_id=context["id"]) }}">New</a>
+        {% if conversations|length == 0 %}
+        <p>Empty</p>
+        {% endif %}
+        {% for conversation in conversations %}
+        {% endfor %}
     <section class="lists">
         <h2>Lists</h2>
         <a href="{{ url_for("contexts.new_list", context_id=context["id"]) }}">Connect</a>

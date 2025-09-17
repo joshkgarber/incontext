@@ -5,6 +5,7 @@ from werkzeug.exceptions import abort
 
 from incontext.auth import login_required
 from incontext.db import get_db
+from incontext.contexts import get_context
 from incontext.agents import get_agents
 from incontext.agents import get_agent
 from openai import OpenAI
@@ -29,38 +30,44 @@ def index():
     ).fetchall()
     return render_template('conversations/index.html', conversations=conversations)
 
-@bp.route('/create', methods=('GET', 'POST'))
+
+@bp.route("/new", methods=("GET", "POST"))
 @login_required
-def create():
+def new():
+    context_id = request.args.get("context_id") 
+    context = get_context(context_id)
     if request.method == 'POST':
         name = request.form['name']
-        agent_id = request.form['agent']
+        agent_id = request.form['agent_id']
         error = None
-
         if not name or not agent_id:
             error = 'Name and agent are required.'
-        
         if error is not None:
             flash(error) 
         else:
             db = get_db()
             cur = db.cursor()
             cur.execute(
-                'INSERT INTO conversations (name, creator_id)'
-                ' VALUES (?, ?)',
-                (name, g.user['id'])
+                'INSERT INTO conversations (name)'
+                ' VALUES (?)',
+                (name,)
             )
             conversation_id = cur.lastrowid
+            cur.execute(
+                'INSERT INTO context_conversation_relations(context_id, conversation_id)'
+                ' VALUES (?, ?)',
+                (context_id, conversation_id)
+            )
             cur.execute(
                 'INSERT INTO conversation_agent_relations(conversation_id, agent_id)'
                 ' VALUES (?, ?)',
                 (conversation_id, agent_id)
             )
             db.commit()
-            return redirect(url_for('conversations.index'))
-    
+            return redirect(url_for('contexts.view', context_id=context_id))
     agents = get_agents()
-    return render_template('conversations/create.html', agents=agents)
+    return render_template('conversations/new.html', agents=agents, context=context)
+
 
 def get_conversation(id, check_creator=True):
     conversation = get_db().execute(
