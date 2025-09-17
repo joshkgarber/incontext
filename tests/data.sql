@@ -12,10 +12,10 @@ VALUES
 	(3, "context name 3", "context description 3");
 
 
-INSERT INTO context_list_relations (creator_id, context_id, list_id)
+INSERT INTO context_list_relations (context_id, list_id)
 VALUES
-    (2, 1, 1),
-    (2, 1, 2);
+    (1, 1),
+    (1, 2);
 
 
 INSERT INTO context_conversation_relations (context_id, conversation_id)

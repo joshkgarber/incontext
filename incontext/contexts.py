@@ -102,9 +102,9 @@ def new_list(context_id):
         alist = get_list(list_id)
         db = get_db()
         db.execute(
-            "INSERT INTO context_list_relations (creator_id, context_id, list_id)"
-            " VALUES (?, ?, ?)",
-            (g.user["id"], context_id, list_id)
+            "INSERT INTO context_list_relations (context_id, list_id)"
+            " VALUES (?, ?)",
+            (context_id, list_id)
         )
         db.commit()
         return redirect(url_for("contexts.view", context_id=context_id))

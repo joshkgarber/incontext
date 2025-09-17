@@ -22,7 +22,7 @@
 - [x] There's no view route for the conversation. You can only view it in the context.
 - [x] Conversations/edit: You can change the name, related agent, and related context.
     - [x] Tests
-- [ ] Remove creator id from context_list_relations and context_agent_relations
+- [x] Remove creator id from context_list_relations
 - [ ] Agent view: should show related conversations with a link to the conversation and a link to the related context. also a list of all the contexts alone.
 - [ ] Full conversation usage on context view page
     - [ ] Migrate code from the conversation view template
