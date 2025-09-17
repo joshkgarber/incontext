@@ -3,24 +3,44 @@ from incontext.db import get_db
 from tests.test_db import get_other_tables
 
 
-# def test_index(client, auth):
-#     # user must be logged in
-#     response = client.get('/conversations/', follow_redirects=True) # The follow_redirects is new in just-conversations. Now login is indeed required for the entity (conversations) index page. The login_required decorator is commented out in just-contexts and just-agents, but if future it shouldn't be in a combined app.
-#     assert b'Log In' in response.data
-#     assert b'Register' in response.data
-#     
-#     # serve the conversations overview page to logged-in user
-#     auth.login()
-#     response = client.get('/conversations/')
-#     # base nav
-#     assert b'Log Out' in response.data
-#     # main
-#     assert b'test name' in response.data
-#     assert b'Created: 01.01.2025' in response.data
-#     assert b'Creator: test' in response.data
-#     assert b'href="/conversations/1"' in response.data
-#     assert b'href="/conversations/1/update"' in response.data
-#     assert b'Agent: Test' in response.data
+def test_index(app, client, auth):
+    with app.app_context():
+        path = "/conversations/"
+        # Get all tables before
+        all_tables_before = get_other_tables()
+        # User must be logged in
+        response = client.get(path)
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        assert get_other_tables() == all_tables_before
+        # Make the request
+        auth.login()
+        response = client.get(path)
+        assert response.status_code == 200
+        assert get_other_tables() == all_tables_before
+        # User's conversation data is shown, other users not
+        db = get_db()
+        conversations = db.execute(
+            "SELECT c.id, c.name, c.created, a.id AS agent_id, a.name AS agent_name, ccr.context_id, ctx.name AS context_name, ctx.creator_id"
+            " FROM conversations c"
+            " JOIN conversation_agent_relations r ON c.id = r.conversation_id"
+            " JOIN agents a ON r.agent_id = a.id"
+            " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+            " JOIN contexts ctx ON ctx.id = ccr.context_id"
+        ).fetchall()
+        for conversation in conversations:
+            agent_name = conversation["agent_name"]
+            context_name = conversation["context_name"]
+            if conversation["creator_id"] == 2:
+                assert conversation["name"].encode() in response.data
+                assert conversation["agent_name"].encode() in response.data
+                assert conversation["context_name"].encode() in response.data
+            else:
+                assert conversation["name"].encode() not in response.data
+                if conversation["agent_name"] != agent_name:
+                    assert conversation["agent_name"].encode() not in response.data
+                if conversation["context_name"] != context_name:
+                    assert conversation["context_name"].encode() not in response.data
 
 
 def test_new_get(client, auth, app):

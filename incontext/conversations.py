@@ -14,21 +14,26 @@ from google import genai
 from google.genai import types
 import os
 
+
 bp = Blueprint('conversations', __name__, url_prefix='/conversations')
 
-@bp.route('/')
+
+@bp.route("/")
 @login_required
 def index():
     db = get_db()
     conversations = db.execute(
-        'SELECT c.id, c.name, c.created, c.creator_id, u.username, a.name as agent'
-        ' FROM conversations c'
-        ' JOIN users u ON c.creator_id = u.id'
-        ' JOIN conversation_agent_relations r ON c.id = r.conversation_id'
-        ' JOIN agents a ON r.agent_id = a.id'
-        ' ORDER BY c.created DESC'
+        "SELECT c.id, c.name, c.created, a.id AS agent_id, a.name AS agent_name, ccr.context_id, ctx.name AS context_name"
+        " FROM conversations c"
+        " JOIN conversation_agent_relations r ON c.id = r.conversation_id"
+        " JOIN agents a ON r.agent_id = a.id"
+        " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+        " JOIN contexts ctx ON ctx.id = ccr.context_id"
+        " WHERE ctx.creator_id = ?"
+        " ORDER BY c.created DESC",
+        (g.user["id"],)
     ).fetchall()
-    return render_template('conversations/index.html', conversations=conversations)
+    return render_template("conversations/index.html", conversations=conversations)
 
 
 @bp.route("/new", methods=("GET", "POST"))
@@ -69,37 +74,16 @@ def new():
     return render_template('conversations/new.html', agents=agents, context=context)
 
 
-def get_conversation(id, check_creator=True):
-    conversation = get_db().execute(
-        'SELECT c.id, name, created, creator_id, username, r.agent_id as agent_id'
-        ' FROM conversations c'
-        ' JOIN users u ON c.creator_id = u.id'
-        ' JOIN conversation_agent_relations r ON c.id = r.conversation_id'
-        ' WHERE c.id = ?',
-        (id,)
-    ).fetchone()
-
-    if conversation is None:
-        abort(404, f"Conversation id {id} doesn't exist.")
-
-    if check_creator and conversation['creator_id'] != g.user['id']:
-        abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
-    
-    return conversation
-
-@bp.route('/<int:id>/update', methods=('GET', 'POST'))
+@bp.route('/<int:id>/edit', methods=('GET', 'POST'))
 @login_required
-def update(id):
+def edit(id):
     conversation = get_conversation(id)
-
     if request.method == 'POST':
         name = request.form['name']
         agent_id = request.form['agent']
         error = None
-
         if not name or not agent_id:
             error = 'Name and agent are required.'
-
         if error is not None:
             flash(error)
         else:
@@ -116,9 +100,8 @@ def update(id):
             )
             db.commit()
             return redirect(url_for('conversations.index'))
-
     agents = get_agents()
-    return render_template('conversations/update.html', conversation=conversation, agents=agents)
+    return render_template('conversations/edit.html', conversation=conversation, agents=agents)
 
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required
@@ -152,6 +135,22 @@ def view(id):
     return render_template('conversations/view.html', conversation=conversation, agent=agent, messages=messages)
 
 
+def get_conversation(id, check_creator=True):
+    conversation = get_db().execute(
+        'SELECT c.id, name, created, creator_id, username, r.agent_id as agent_id'
+        ' FROM conversations c'
+        ' JOIN users u ON c.creator_id = u.id'
+        ' JOIN conversation_agent_relations r ON c.id = r.conversation_id'
+        ' WHERE c.id = ?',
+        (id,)
+    ).fetchone()
+    if conversation is None:
+        abort(404, f"Conversation id {id} doesn't exist.")
+    if check_creator and conversation['creator_id'] != g.user['id']:
+        abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
+    return conversation
+
+
 def get_messages(conversation_id):
     messages = get_db().execute(
         'SELECT m.id, m.content, m.human, m.created, c.creator_id'
@@ -161,7 +160,6 @@ def get_messages(conversation_id):
         ' WHERE c.id = ?',
         (conversation_id,)
     ).fetchall()
-    
     return messages
 
 

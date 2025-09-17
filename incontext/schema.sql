@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS agents;
 DROP TABLE IF EXISTS agent_models;
 DROP TABLE IF EXISTS conversations;
 DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS conversation_agent_relations;
 
 
 CREATE TABLE users (
