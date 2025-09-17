@@ -18,7 +18,7 @@
                 <p>Context: {{ conversation["context_name"] }} <a href="{{ url_for("contexts.view", context_id=conversation["context_id"]) }}">View</a></p>
             </section>
             <footer>
-                <a href="{{ url_for("conversations.edit", id=conversation["id"]) }}">Edit</a>
+                <a href="{{ url_for("conversations.edit", conversation_id=conversation["id"]) }}">Edit</a>
                 <p>Created: {{ conversation["created"].strftime("%d.%m.%Y") }}</p>
             </footer>
         </article>

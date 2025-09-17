@@ -111,12 +111,12 @@ def test_new_post(client, auth, app):
         # Data validation
         path = "/conversations/new?context_id=1"
         # Name
-        data["agent_id"] == "1"
+        data["agent_id"] = "1"
         response = client.post(path, data=data)
         assert b"Name and agent are required" in response.data
         assert get_other_tables() == all_tables_before
         # Agent ID
-        data["agent_id"] == ""
+        data["agent_id"] = ""
         data["name"] = "new conversation"
         response = client.post(path, data=data)
         assert b"Name and agent are required" in response.data
@@ -167,6 +167,118 @@ def test_new_post(client, auth, app):
         assert len(context_conversation_relations_after) == len(context_conversation_relations_before) + 1
 
 
+def test_edit_get(app, client, auth):
+    with app.app_context():
+        # Get all tables before
+        all_tables_before = get_other_tables()
+        path = "/conversations/1/edit"
+        # User must be logged in
+        response = client.get(path)
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        # User must have access
+        auth.login("other", "other")
+        response = client.get(path)
+        assert response.status_code == 403
+        # Conversation must exist
+        auth.login()
+        response = client.get("/conversations/bogus/edit")
+        assert response.status_code == 404
+        # Make the request
+        response = client.get(path)
+        assert response.status_code == 200
+        # Conversation name is served, others not
+        db = get_db()
+        conversations = db.execute(
+            "SELECT c.name, c.id"
+            " FROM conversations c"
+        ).fetchall()
+        for c in conversations:
+            if c["id"] == 1:
+                assert c["name"].encode() in response.data
+            else:
+                assert c["name"].encode() not in response.data
+        # User's agents names are served, others not
+        agents = db.execute("SELECT * FROM agents").fetchall()
+        for agent in agents:
+            if agent["creator_id"] == 2:
+                assert agent["name"].encode() in response.data
+            else:
+                assert agent["name"].encode() not in response.data
+        # Data hasn't changed
+        assert get_other_tables() == all_tables_before
+
+
+def test_edit_post(app, client, auth):
+    with app.app_context():
+        all_tables_before = get_other_tables()
+        path = "/conversations/1/edit"
+        data = dict(name="", agent_id="")
+        # User must be logged in
+        response = client.post(path, data=data)
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        # User must have access
+        auth.login("other", "other")
+        response = client.post(path, data=data)
+        assert response.status_code == 403
+        # Conversation must exist
+        auth.login()
+        path = "/conversations/bogus/edit"
+        response = client.post(path, data=data)
+        assert response.status_code == 404
+        path = "/conversations/1/edit"
+        # Data validation
+        # Name
+        data["agent_id"] = "2"
+        response = client.post(path, data=data)
+        assert b"Name and agent are required" in response.data
+        # Agent ID
+        data["agent_id"] = ""
+        data["name"] = "conversation name updated"
+        response = client.post(path, data=data)
+        assert b"Name and agent are required" in response.data
+        # After all that, data hasn't changed.
+        assert get_other_tables() == all_tables_before
+        # Get affected tables before
+        db = get_db()
+        conversations_before = db.execute("SELECT * FROM conversations").fetchall()
+        conversation_agent_relations_before = db.execute("SELECT * FROM conversation_agent_relations").fetchall()
+        # Get other tables before
+        other_tables_before = get_other_tables(["conversations", "conversation_agent_relations"])
+        # Make the request
+        data["agent_id"] = "2"
+        response = client.post(path, data=data)
+        # Redirected to the conversations index 
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/conversations/"
+        # Get affected tables after
+        conversations_after = db.execute("SELECT * FROM conversations").fetchall()
+        conversation_agent_relations_after = db.execute("SELECT * FROM conversation_agent_relations").fetchall()
+        # Get other tables after
+        other_tables_after = get_other_tables(["conversations", "conversation_agent_relations"])
+        # Assert other tables haven't changed
+        assert other_tables_after  == other_tables_before
+        # Assert expected rows have been edited in the affected tables and other rows haven't changed
+        edited_conversation = [ca for ca in conversations_after if ca["name"] == "conversation name updated"]
+        assert len(edited_conversation) == 1
+        ed_conv = edited_conversation[0]
+        for ca in conversations_after:
+            if ca != ed_conv:
+                assert ca in conversations_before
+        assert len(conversations_after) == len(conversations_before)
+        conv_id = ed_conv["id"]
+        for car in conversation_agent_relations_after:
+            if car["conversation_id"] == conv_id:
+                assert car["agent_id"] == 2
+                assert car not in conversation_agent_relations_before
+            else:
+                assert car in conversation_agent_relations_before
+        assert len(conversation_agent_relations_after) == len(conversation_agent_relations_before)
+
+
+        
+            
 # def test_view_conversation(app, client, auth):
 #     # user must be logged in
 #     response = client.get('/conversations/1', follow_redirects=True)

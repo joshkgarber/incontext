@@ -74,34 +74,35 @@ def new():
     return render_template('conversations/new.html', agents=agents, context=context)
 
 
-@bp.route('/<int:id>/edit', methods=('GET', 'POST'))
+@bp.route("/<int:conversation_id>/edit", methods=("GET", "POST"))
 @login_required
-def edit(id):
-    conversation = get_conversation(id)
-    if request.method == 'POST':
-        name = request.form['name']
-        agent_id = request.form['agent']
+def edit(conversation_id):
+    conversation = get_conversation(conversation_id)
+    if request.method == "POST":
+        name = request.form["name"]
+        agent_id = request.form["agent_id"]
         error = None
         if not name or not agent_id:
-            error = 'Name and agent are required.'
+            error = "Name and agent are required."
         if error is not None:
             flash(error)
         else:
             db = get_db()
             db.execute(
-                'UPDATE conversations SET name = ?'
-                ' WHERE id = ?',
-                (name, id)
+                "UPDATE conversations SET name = ?"
+                " WHERE id = ?",
+                (name, conversation_id)
             )
             db.execute(
-                'UPDATE conversation_agent_relations SET agent_id = ?'
-                ' WHERE conversation_id = ?',
-                (agent_id, id)
+                "UPDATE conversation_agent_relations SET agent_id = ?"
+                " WHERE conversation_id = ?",
+                (agent_id, conversation_id)
             )
             db.commit()
-            return redirect(url_for('conversations.index'))
+            return redirect(url_for("conversations.index"))
     agents = get_agents()
-    return render_template('conversations/edit.html', conversation=conversation, agents=agents)
+    return render_template("conversations/edit.html", conversation=conversation, agents=agents)
+
 
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required
@@ -126,27 +127,19 @@ def get_related_agent(conversation_id):
     return agent
 
 
-@bp.route('/<int:id>', methods=('GET',))
-@login_required
-def view(id):
-    conversation = get_conversation(id)
-    agent = get_related_agent(id)
-    messages = get_messages(id)
-    return render_template('conversations/view.html', conversation=conversation, agent=agent, messages=messages)
-
-
-def get_conversation(id, check_creator=True):
+def get_conversation(conversation_id, check_creator=True):
     conversation = get_db().execute(
-        'SELECT c.id, name, created, creator_id, username, r.agent_id as agent_id'
-        ' FROM conversations c'
-        ' JOIN users u ON c.creator_id = u.id'
-        ' JOIN conversation_agent_relations r ON c.id = r.conversation_id'
-        ' WHERE c.id = ?',
-        (id,)
+        "SELECT c.id, c.name, c.created, r.agent_id, ctx.creator_id"
+        " FROM conversations c"
+        " JOIN conversation_agent_relations r ON c.id = r.conversation_id"
+        " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+        " JOIN contexts ctx ON ctx.id = ccr.context_id"
+        " WHERE c.id = ?",
+        (conversation_id,)
     ).fetchone()
     if conversation is None:
-        abort(404, f"Conversation id {id} doesn't exist.")
-    if check_creator and conversation['creator_id'] != g.user['id']:
+        abort(404, f"Conversation id {conversation_id} doesn't exist.")
+    if check_creator and conversation["creator_id"] != g.user["id"]:
         abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
     return conversation
 
