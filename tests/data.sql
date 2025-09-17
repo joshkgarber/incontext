@@ -101,3 +101,18 @@ VALUES
 	(2, "agent name 4", "agent description 4", 5, "agent role 4", "agent instructions 4");
 
 
+INSERT INTO conversations (name, creator_id, created)
+VALUES
+	('test name', 2, '2025-01-01 00:00:00');			
+
+
+INSERT INTO messages (conversation_id, content, human)
+VALUES
+	(1, 'This is a test.', 1),
+	(1, 'Working', 0),
+	(1, 'This is a test.', 1);
+
+
+INSERT INTO conversation_agent_relations (conversation_id, agent_id)
+VALUES
+	(1, 1);

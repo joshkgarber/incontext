@@ -1,9 +1,12 @@
 [project]
 name = "incontext"
-version = "0.0.10"
-description = "Build and manage contexts for your LLM conversations."
+version = "0.0.11"
+description = "Curate contexts and have conversations with LLMs."
 dependencies = [
 	"flask",
+    "openai",
+	"anthropic",
+	"google-genai",
 	"pytest",
     "coverage",
 	"gunicorn",

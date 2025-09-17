@@ -47,4 +47,7 @@ def create_app(test_config=None):
     from . import agents
     app.register_blueprint(agents.bp)
 
+    from .import conversations
+    app.register_blueprint(conversations.bp)
+
     return app

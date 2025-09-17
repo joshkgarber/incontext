@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block header %}
+	<h1>{% block title %}Conversations{% endblock %}</h1>
+	{% if g.user %}
+		<a href="{{ url_for('conversations.create') }}">New</a>
+	{% endif %}
+{% endblock %}
+
+{% block main %}
+	{% for conversation in conversations %}
+		{% if g.user['id'] == conversation['creator_id'] %} 
+			<article class="conversation-card">
+				<header>
+					<h2>{{ conversation['name'] }}</h2>
+				</header>
+				<section>
+					<p>Agent: {{ conversation['agent'] }}</p>
+					<a href="{{ url_for('conversations.view', id=conversation['id']) }}">Open</a>
+				</section>
+				<footer>
+					<p>Created: {{ conversation['created'].strftime('%d.%m.%Y') }} | Creator: {{ conversation['username'] }} | <a href="{{ url_for('conversations.update', id=conversation['id']) }}">Edit</a></p>
+				</footer>
+			</article>
+			{% if not loop.last %}
+				<hr>
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+{% endblock %}

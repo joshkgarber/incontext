@@ -2,14 +2,17 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS contexts;
 DROP TABLE IF EXISTS context_list_relations;
 DROP TABLE IF EXISTS context_agent_relations;
+DROP TABLE IF EXISTS context_conversation_relations;
+DROP TABLE IF EXISTS lists;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS details;
-DROP TABLE IF EXISTS item_detail_relations;
-DROP TABLE IF EXISTS lists;
 DROP TABLE IF EXISTS list_item_relations;
 DROP TABLE IF EXISTS list_detail_relations;
+DROP TABLE IF EXISTS item_detail_relations;
 DROP TABLE IF EXISTS agents;
 DROP TABLE IF EXISTS agent_models;
+DROP TABLE IF EXISTS conversations;
+DROP TABLE IF EXISTS messages;
 
 
 CREATE TABLE users (
@@ -52,6 +55,25 @@ CREATE TABLE context_agent_relations (
 );
 
 
+CREATE TABLE context_conversation_relations (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	context_id INTEGER NOT NULL,
+	conversation_id INTEGER NOT NULL,
+	FOREIGN KEY (context_id) REFERENCES contexts (id),
+	FOREIGN KEY (conversation_id) REFERENCES conversations (id)
+);
+
+
+CREATE TABLE lists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    creator_id INTEGER NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    name TEXT NOT NULL,
+    description TEXT,
+    FOREIGN KEY (creator_id) REFERENCES users (id)
+);
+
+
 CREATE TABLE items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     creator_id INTEGER NOT NULL,
@@ -62,26 +84,6 @@ CREATE TABLE items (
 
 
 CREATE TABLE details (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    creator_id INTEGER NOT NULL,
-    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    name TEXT NOT NULL,
-    description TEXT,
-    FOREIGN KEY (creator_id) REFERENCES users (id)
-);
-
-
-CREATE TABLE item_detail_relations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_id INTEGER NOT NULL,
-    detail_id INTEGER NOT NULL,
-    content TEXT,
-    FOREIGN KEY (item_id) REFERENCES items (id)
-    FOREIGN KEY (detail_id) REFERENCES details (id)
-);
-
-
-CREATE TABLE lists (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     creator_id INTEGER NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -109,6 +111,16 @@ CREATE TABLE list_detail_relations (
 );
 
 
+CREATE TABLE item_detail_relations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    detail_id INTEGER NOT NULL,
+    content TEXT,
+    FOREIGN KEY (item_id) REFERENCES items (id)
+    FOREIGN KEY (detail_id) REFERENCES details (id)
+);
+
+
 CREATE TABLE agents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     creator_id INTEGER NOT NULL,
@@ -132,3 +144,30 @@ CREATE TABLE agent_models (
     model_description TEXT NOT NULL
 );
 
+
+CREATE TABLE conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    creator_id INTEGER NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    name TEXT NOT NULL,
+    FOREIGN KEY (creator_id) REFERENCES users (id)
+);
+
+
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    content TEXT NOT NULL,
+    human INTEGER NOT NULL,
+    FOREIGN KEY (conversation_id) REFERENCES conversations (id)
+);
+
+
+CREATE TABLE conversation_agent_relations (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	conversation_id INTEGER NOT NULL,
+	agent_id INTEGER NOT NULL,
+	FOREIGN KEY (conversation_id) REFERENCES conversations (id),
+	FOREIGN KEY (agent_id) REFERENCES agents (id)
+);

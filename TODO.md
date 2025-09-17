@@ -1,7 +1,7 @@
 # TODO
 
-- [ ] Merge just-conversations with this project
-- [ ] Define user stories
+- [x] Merge just-conversations with this project
+- [ ] Define requirements
 - [ ] Write the code and tests along with them as you go.
 - [ ] Run a coverage report
 - [ ] Deploy
