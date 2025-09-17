@@ -1,7 +1,6 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS contexts;
 DROP TABLE IF EXISTS context_list_relations;
-DROP TABLE IF EXISTS context_agent_relations;
 DROP TABLE IF EXISTS context_conversation_relations;
 DROP TABLE IF EXISTS lists;
 DROP TABLE IF EXISTS items;
@@ -42,17 +41,6 @@ CREATE TABLE context_list_relations (
     FOREIGN KEY (creator_id) REFERENCES users (id),
     FOREIGN KEY (context_id) REFERENCES contexts (id),
     FOREIGN KEY (list_id) REFERENCES lists (id)
-);
-
-
-CREATE TABLE context_agent_relations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    creator_id INTEGER NOT NULL,
-    context_id INTEGER NOT NULL,
-    agent_id INTEGER NOT NULL,
-    FOREIGN KEY (creator_id) REFERENCES users (id),
-    FOREIGN KEY (context_id) REFERENCES contexts (id),
-    FOREIGN KEY (agent_id) REFERENCES agents (id)
 );
 
 

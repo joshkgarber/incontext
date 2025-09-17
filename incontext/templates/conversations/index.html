@@ -20,7 +20,6 @@
             <footer>
                 <a href="{{ url_for("conversations.edit", id=conversation["id"]) }}">Edit</a>
                 <p>Created: {{ conversation["created"].strftime("%d.%m.%Y") }}</p>
-                
             </footer>
         </article>
         {% if not loop.last %}

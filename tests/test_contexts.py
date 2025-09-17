@@ -132,19 +132,26 @@ def test_view(client, auth, app):
             else:
                 assert listo["name"].encode() not in response.data
                 assert listo["description"].encode() not in response.data
-        # Serve name and description of connected agents and not other agents
-        agents = db.execute(
-            "SELECT a.name, a.description, r.context_id FROM agents a"
-            " JOIN context_agent_relations r ON r.agent_id = a.id"
+        # Serve name of related conversations and their agents
+        conversations = db.execute(
+            "SELECT c.id, c.name, c.created, a.id AS agent_id, a.name AS agent_name, ccr.context_id, ctx.name AS context_name, ctx.creator_id"
+            " FROM conversations c"
+            " JOIN conversation_agent_relations r ON c.id = r.conversation_id"
+            " JOIN agents a ON r.agent_id = a.id"
+            " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+            " JOIN contexts ctx ON ctx.id = ccr.context_id"
         ).fetchall()
-        for agent in agents:
-            if agent["context_id"] == 1:
-                assert agent["name"].encode() in response.data
-                assert agent["description"].encode() in response.data
+        for conversation in conversations:
+            agent_name = conversation["agent_name"]
+            context_name = conversation["context_name"]
+            if conversation["context_id"] == 1:
+                assert conversation["name"].encode() in response.data
+                assert conversation["agent_name"].encode() in response.data
             else:
-                assert agent["name"].encode() not in response.data
-                assert agent["description"].encode() not in response.data
-
+                assert conversation["name"].encode() not in response.data
+                if conversation["agent_name"] != agent_name:
+                    assert conversation["agent_name"].encode() not in response.data
+       
 
 def test_edit_get(client, auth, app):
     with app.app_context():
@@ -263,9 +270,8 @@ def test_delete(client, auth, app):
         db = get_db()
         contexts_before = db.execute("SELECT * FROM contexts").fetchall()
         context_list_relations_before = db.execute("SELECT * FROM context_list_relations").fetchall()
-        context_agent_relations_before = db.execute("SELECT * FROM context_agent_relations").fetchall()
         # Get other tables before
-        other_tables_before = get_other_tables(["contexts", "context_list_relations", "context_agent_relations"])
+        other_tables_before = get_other_tables(["contexts", "context_list_relations"])
         # Make request
         auth.login()
         response = client.post("contexts/1/delete")
@@ -273,13 +279,12 @@ def test_delete(client, auth, app):
         assert response.status_code == 302
         assert response.headers["Location"] == "/contexts/"
         # Get other tables after
-        other_tables_after = get_other_tables(["contexts", "context_list_relations", "context_agent_relations"])
+        other_tables_after = get_other_tables(["contexts", "context_list_relations"])
         # Assert other tables didn't change
         assert other_tables_after == other_tables_before
         # Get affected tables after
         contexts_after = db.execute("SELECT * FROM contexts").fetchall()
         context_list_relations_after = db.execute("SELECT * FROM context_list_relations").fetchall()
-        context_agent_relations_after = db.execute("SELECT * FROM context_agent_relations").fetchall()
         # Assert the affected rows are gone and the other rows are unchanged
         assert len(contexts_after) == len(contexts_before) - 1
         affected_context = next((c for c in contexts_before if c["id"] == 1), None)
@@ -295,14 +300,6 @@ def test_delete(client, auth, app):
             else:
                 assert clr in context_list_relations_after
         assert len(context_list_relations_before) == len(context_list_relations_after) + clr_deletion_count
-        car_deletion_count = 0
-        for car in context_list_relations_before:
-            if car["context_id"] == 1:
-                assert car not in context_agent_relations_after
-                car_deletion_count += 1
-            else:
-                assert car in context_list_relations_after
-        assert len(context_agent_relations_before) == len(context_agent_relations_after) + car_deletion_count
 
 
 def test_connect_list_get(client, auth, app):
@@ -454,156 +451,3 @@ def test_remove_list(client, auth, app):
                 assert clr["list_id"] != 1
             assert clr in context_list_relations_before
         assert len(context_list_relations_after) == len(context_list_relations_before) - 1
-
-
-def test_connect_agent_get(client, auth, app):
-    with app.app_context():
-        # Get all tables before
-        all_tables_before = get_other_tables()
-        # User must be logged in
-        path = "/contexts/1/new-agent"
-        response = client.get(path)
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/auth/login"
-        assert get_other_tables() == all_tables_before # Data unchanged
-        # User must have access
-        auth.login("other", "other")
-        response = client.get(path)
-        assert response.status_code == 403
-        assert get_other_tables() == all_tables_before # Data unchanged
-        # Context must exist
-        auth.login()
-        response = client.get("/contexts/bogus/new-agent")
-        assert response.status_code == 404
-        assert get_other_tables() == all_tables_before # Data unchanged
-        # Make the request
-        response = client.get(path)
-        assert response.status_code == 200
-        # The user's agents are shown (if not already connected) and other agents are not shown
-        db = get_db()
-        agents = db.execute(
-            "SELECT a.creator_id, a.name, a.description, r.context_id"
-            " FROM agents a LEFT JOIN context_agent_relations r"
-            " ON a.id = r.agent_id"
-        ).fetchall()
-        for agent in agents:
-            print(f"agent name: {agent["name"]} | context id: {agent["context_id"]}")
-            if agent["context_id"]:
-                assert agent["name"].encode() not in response.data
-                assert agent["description"].encode() not in response.data
-            else:
-                if agent["creator_id"] == 1:
-                    assert agent["name"].encode() in response.data
-                    assert agent["description"].encode() in response.data
-
-
-
-def test_connect_agent_post(client, auth, app):
-    with app.app_context():
-        # Get all tables before
-        all_tables_before = get_other_tables()
-        # User must be logged in
-        data = dict(agent_id="")
-        path = "/contexts/1/new-agent"
-        response = client.post(path, data=data)
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/auth/login"
-        assert get_other_tables() == all_tables_before
-        # User must have access
-        auth.login("other", "other")
-        response = client.post(path, data=data)
-        assert response.status_code == 403
-        assert get_other_tables() == all_tables_before
-        # Context must exist
-        auth.login()
-        response = client.post("/contexts/bogus/new-agent", data=data)
-        assert response.status_code == 404
-        assert get_other_tables() == all_tables_before
-        # User must have access to the agent
-        data["agent_id"] = 3
-        response = client.post(path, data=data)
-        assert response.status_code == 403
-        assert get_other_tables() == all_tables_before
-        # Get affected tables before the request
-        db = get_db()
-        context_agent_relations_before = db.execute("SELECT * FROM context_agent_relations").fetchall()
-        # Get other tables before the request
-        other_tables_before = get_other_tables(["context_agent_relations"])
-        # Make the request
-        data["agent_id"] = 4
-        response = client.post(path, data=data)
-        # Redirected to context view
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/contexts/1/view"
-        # Get affected tables after the request
-        context_agent_relations_after = db.execute("SELECT * FROM context_agent_relations").fetchall()
-        # Get other tables after the request
-        other_tables_after = get_other_tables(["context_agent_relations"])
-        # Assert that other tables have not changed
-        assert other_tables_after == other_tables_before
-        # Assert that the expected rows have been added to the affected tables and other rows have not changed
-        new_relation = next((relation for relation in context_agent_relations_after if relation["agent_id"] == 4 and relation["context_id"] == 1), None)
-        assert new_relation is not None
-        for relation in context_agent_relations_after:
-            if relation != new_relation:
-                assert relation in context_agent_relations_before
-        assert len(context_agent_relations_after) == len(context_agent_relations_before) + 1
-
-
-
-def test_remove_agent(client, auth, app):
-    with app.app_context():
-        path = "/contexts/1/remove-agent"
-        data = dict(agent_id="1")
-        # Get all tables before
-        all_tables_before = get_other_tables()
-        # User must be logged in
-        response = client.post(path, data=data)
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/auth/login"
-        assert get_other_tables() == all_tables_before
-        # User must have access to the context
-        auth.login("other", "other")
-        response = client.post("/contexts/3/remove-agent", data=data)
-        assert response.status_code == 403
-        assert get_other_tables() == all_tables_before
-        # User must have access to the agent
-        auth.login()
-        data["agent_id"] = 3
-        response = client.post(path, data=data)
-        assert response.status_code == 403
-        assert get_other_tables() == all_tables_before
-        # Context must exist
-        response = client.post("/contexts/bogus/remove-agent", data=data)
-        assert response.status_code == 404
-        assert get_other_tables() == all_tables_before
-        # Agent must exist
-        data["agent_id"] = "bogus"
-        response = client.post(path, data=data)
-        assert response.status_code == 404
-        assert get_other_tables() == all_tables_before
-        # Agent is required
-        data = {}
-        response = client.post(path, data=data)
-        assert response.status_code == 400
-        assert get_other_tables() == all_tables_before
-        # Get the affected tables before the request
-        db = get_db()
-        context_agent_relations_before = db.execute("SELECT * FROM context_agent_relations").fetchall()
-        # Get the other tables before the request
-        other_tables_before = get_other_tables(["context_agent_relations"])
-        # Make the request
-        data["agent_id"] = "1"
-        response = client.post(path, data=data)
-        # Redirected to context view
-        assert response.status_code == 302
-        assert response.headers["Location"] == "/contexts/1/view"
-        # Other tables are unchanged
-        assert get_other_tables(["context_agent_relations"]) == other_tables_before
-        # Affected row is removed while other rows are unchanged.
-        context_agent_relations_after = db.execute("SELECT * FROM context_agent_relations").fetchall()
-        for car in context_agent_relations_after:
-            if car["context_id"] == 1:
-                assert car["agent_id"] != 1
-            assert car in context_agent_relations_before
-        assert len(context_agent_relations_after) == len(context_agent_relations_before) - 1

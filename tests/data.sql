@@ -18,12 +18,6 @@ VALUES
     (2, 1, 2);
 
 
-INSERT INTO context_agent_relations (creator_id, context_id, agent_id)
-VALUES
-    (2, 1, 1),
-    (2, 1, 2);
-
-
 INSERT INTO context_conversation_relations (context_id, conversation_id)
 VALUES
     (1, 1),

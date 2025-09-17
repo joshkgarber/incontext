@@ -1,31 +1,37 @@
 {% extends "base.html" %}
 
 {% block header %}
-	<h1>{% block title %}Context: {{ context["name"] }}{% endblock %}</h1>
-    <p>{{ context["description"] }}</p>
-    <p>Created: {{ context["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("contexts.edit", context_id=context["id"]) }}">Edit</a></p>
+<h1>{% block title %}Context: {{ context["name"] }}{% endblock %}</h1>
+<p>{{ context["description"] }}</p>
+<p>Created: {{ context["created"].strftime("%d.%m.%Y") }} | <a href="{{ url_for("contexts.edit", context_id=context["id"]) }}">Edit</a></p>
 {% endblock %}
 
 {% block main %}
+<div class="context-container">    
     <section class="conversations">
-    </section>
         <h2>Conversations</h2>
         <a href="{{ url_for("conversations.new", context_id=context["id"]) }}">New</a>
         {% if conversations|length == 0 %}
         <p>Empty</p>
         {% endif %}
         {% for conversation in conversations %}
+        <article class="conversation">
+            <header><h3>{{ conversation["name"] }}</h3></header>
+            <p>Agent: {{ conversation["agent_name"] }} <a href="{{ url_for("agents.view", agent_id=conversation["agent_id"]) }}">View</a></p>
+            <a href="{{ url_for("conversations.edit", id=conversation["id"]) }}">Edit</a>
+        </article>
         {% endfor %}
+    </section>
     <section class="lists">
         <h2>Lists</h2>
         <a href="{{ url_for("contexts.new_list", context_id=context["id"]) }}">Connect</a>
         {% if lists|length == 0 %}
         <p>Empty</p>
-        {% else %}
+        {% endif %}
         {% for list in lists %}
         <article class="list">
             <header>
-                <h2>{{ list["name"] }}</h2>
+                <h3>{{ list["name"] }}</h3>
             </header>
             <p>{{ list["description"] }}</p>
             <footer>
@@ -40,32 +46,6 @@
         <hr>
         {% endif %}
         {% endfor %}
-        {% endif %}
     </section>
-    <section class="agents">
-        <h2>Agents</h2>
-        <a href="{{ url_for("contexts.new_agent", context_id=context["id"]) }}">Connect</a>
-        {% if agents|length == 0 %}
-        <p>Empty</p>
-        {% else %}
-        {% for agent in agents %}
-        <article class="agent">
-            <header>
-                <h2>{{ agent["name"] }}</h2>
-            </header>
-            <p>{{ agent["description"] }}</p>
-            <footer>
-                <p><a href="{{ url_for("agents.view", agent_id=agent["id"]) }}">View</a></p>
-                <form method="post" action="{{ url_for("contexts.remove_agent", context_id=context["id"]) }}">
-                    <input type="hidden" name="agent_id" value="{{ agent["id"] }}">
-                    <input type="submit" value="Remove">
-                </form>
-            </footer>
-        </article>
-        {% if not loop.last %}
-        <hr>
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-    </section>
+</div>
 {% endblock %}

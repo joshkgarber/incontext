@@ -26,27 +26,27 @@ def index():
     return render_template('contexts/index.html', contexts=contexts)
 
 
-@bp.route('/new', methods=('GET', 'POST'))
+@bp.route("/new", methods=("GET", "POST"))
 @login_required
 def new():
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
+    if request.method == "POST":
+        name = request.form["name"]
+        description = request.form["description"]
         error = None
         if not name or not description:
-            error = 'Name and description are required.'
+            error = "Name and description are required."
         if error is not None:
             flash(error)
         else:
             db = get_db()
             db.execute(
-                'INSERT INTO contexts (name, description, creator_id)'
-                ' VALUES (?, ?, ?)',
-                (name, description, g.user['id'])
+                "INSERT INTO contexts (name, description, creator_id)"
+                " VALUES (?, ?, ?)",
+                (name, description, g.user["id"])
             )
             db.commit()
-            return redirect(url_for('contexts.index'))
-    return render_template('contexts/new.html')
+            return redirect(url_for("contexts.index"))
+    return render_template("contexts/new.html")
 
 
 @bp.route("/<int:context_id>/view", methods=("GET",))
@@ -54,8 +54,8 @@ def new():
 def view(context_id):
     context = get_context(context_id)
     lists = get_context_lists(context_id)
-    agents = get_context_agents(context_id)
-    return render_template("contexts/view.html", context=context, lists=lists, agents=agents)
+    conversations = get_context_conversations(context_id)
+    return render_template("contexts/view.html", context=context, lists=lists, conversations=conversations)
 
 
 @bp.route("/<int:context_id>/edit", methods=("GET", "POST"))
@@ -89,7 +89,6 @@ def delete(context_id):
     db = get_db()
     db.execute('DELETE FROM contexts WHERE id = ?', (context_id,))
     db.execute("DELETE FROM context_list_relations WHERE context_id = ?", (context_id,))
-    db.execute("DELETE FROM context_agent_relations WHERE context_id = ?", (context_id,))
     db.commit()
     return redirect(url_for('contexts.index'))
 
@@ -113,25 +112,6 @@ def new_list(context_id):
     return render_template("contexts/new_list.html", context=context, lists=lists)
 
 
-@bp.route("/<int:context_id>/new-agent", methods=("GET", "POST"))
-@login_required
-def new_agent(context_id):
-    context = get_context(context_id)
-    if request.method == "POST":
-        agent_id = request.form["agent_id"]
-        agent = get_agent(agent_id)
-        db = get_db()
-        db.execute(
-            "INSERT INTO context_agent_relations (creator_id, context_id, agent_id)"
-            " VALUES (?, ?, ?)",
-            (g.user["id"], context_id, agent_id)
-        )
-        db.commit()
-        return redirect(url_for("contexts.view", context_id=context_id))
-    agents = get_unrelated_agents(context_id)
-    return render_template("contexts/new_agent.html", context=context, agents=agents)
-
-
 @bp.route("/<int:context_id>/remove-list", methods=("POST",))
 @login_required
 def remove_list(context_id):
@@ -143,22 +123,6 @@ def remove_list(context_id):
         "DELETE FROM context_list_relations"
         " WHERE context_id = ? AND list_id = ?",
         (context_id, list_id)
-    )
-    db.commit()
-    return redirect(url_for("contexts.view", context_id=context_id))
-
-
-@bp.route("/<int:context_id>/remove-agent", methods=("POST",))
-@login_required
-def remove_agent(context_id):
-    context = get_context(context_id)
-    agent_id = request.form["agent_id"]
-    agent = get_agent(agent_id)
-    db = get_db()
-    db.execute(
-        "DELETE FROM context_agent_relations"
-        " WHERE context_id = ? AND agent_id = ?",
-        (context_id, agent_id)
     )
     db.commit()
     return redirect(url_for("contexts.view", context_id=context_id))
@@ -201,6 +165,19 @@ def get_context_agents(context_id):
         (context_id,)
     ).fetchall()
     return agents
+
+
+def get_context_conversations(context_id):
+    conversations = get_db().execute(
+        "SELECT c.id, c.name, a.id AS agent_id, a.name AS agent_name"
+        " FROM conversations c"
+        " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+        " JOIN conversation_agent_relations car ON car.conversation_id = c.id"
+        " JOIN agents a ON a.id = car.agent_id"
+        " WHERE ccr.context_id = ?",
+        (context_id,)
+    ).fetchall()
+    return conversations
 
 
 def get_unrelated_lists(context_id):

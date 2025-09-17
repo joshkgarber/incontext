@@ -58,3 +58,8 @@ fieldset div {
 	display: grid;
 	grid-template-columns: 2fr 4fr;
 }
+
+.context-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
