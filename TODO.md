@@ -24,6 +24,8 @@
     - [x] Tests
 - [x] Remove creator id from context_list_relations
 - [ ] Agent view: should show related conversations with a link to the conversation and a link to the related context. also a list of all the contexts alone.
+    - [x] Code
+    - [ ] Tests
 - [ ] Full conversation usage on context view page
     - [ ] Migrate code from the conversation view template
 - [ ] You can delete a conversation, but you can't just remove it from a context. I.e. a conversation cannot exist without a context.

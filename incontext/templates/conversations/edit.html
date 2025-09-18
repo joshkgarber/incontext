@@ -10,11 +10,9 @@
 			<input id="name" name="name" value="{{ request.form['name'] or conversation['name'] }}" required> <!-- When the form hasn't been submitted, the original `conversation` data appears, but if invalid form data was posted it will be displayed so that the user can fix the error. -->
 		</label>
 		<label for="agent">Agent
-			<select name="agent" id="agent" required>
+			<select name="agent_id" id="agent" required>
 				{% for agent in agents %}
-				{% if g.user['id'] == agent['creator_id'] %}
 				<option value="{{ agent['id'] }}">{{ agent['name'] }}</option>
-				{% endif %}
 				{% endfor %}
 			</select>
 		</label>

@@ -173,23 +173,29 @@ def test_view(app, client, auth):
                     assert other_model_name.encode() not in response.data
                 assert agent["role"].encode() not in response.data
                 assert agent["instructions"].encode() not in response.data
-        contexts = db.execute(
-            "SELECT c.name, c.description, r.agent_id FROM contexts c"
-            " JOIN context_agent_relations r ON r.context_id = c.id"
+        # Related conversations and contexts are shown, unrelated are not.
+        conversations = db.execute(
+            "SELECT c.name, ctx.name AS context_name, ctx.description AS context_description, car.agent_id"
+            " FROM conversations c"
+            " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+            " JOIN contexts ctx ON ctx.id = ccr.context_id"
+            " JOIN conversation_agent_relations car ON car.conversation_id = c.id"
         ).fetchall()
         context_names = []
         context_descriptions = []
-        for context in contexts:
-            if context["agent_id"] == 1:
-                context_names.append(context["name"])
-                assert context["name"].encode() in response.data
-                context_descriptions.append(context["description"])
-                assert context["description"].encode() in response.data
+        for c in conversations:
+            if c["agent_id"] == 1:
+                assert c["name"].encode() in response.data
+                context_names.append(c["context_name"])
+                assert c["context_name"].encode() in response.data
+                context_descriptions.append(c["context_description"])
+                assert c["context_description"].encode() in response.data
             else:
-                if context["name"] not in context_names:
-                    assert context["name"] not in response.data
-                if context["description"] not in context_descriptions:
-                    assert context["description"] not in response.data
+                assert c["name"].encode() not in response.data
+                if c["context_name"] not in context_names:
+                    assert c["context_name"].encode() not in response.data
+                if c["context_description"] not in context_descriptions:
+                    assert c["context_description"].encode() not in response.data
 
 
 def test_edit_get(app, client, auth):

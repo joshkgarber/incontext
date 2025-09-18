@@ -6,15 +6,24 @@
 <p><b>Created:</b> {{ agent['created'].strftime('%d.%m.%Y') }}</p>
 {% endblock %}
 {% block main %}
-	<h2>Attributes</h2>
-	<ul>
-		<li><b>Creator: </b>{{ agent['username'] }}</li>
-		<li><b>Name: </b>{{ agent['name'] }}</li>
-		<li><b>Model: </b>{{ agent['model_name'] }}</li>
-		<li><b>Provider: </b>{{ agent["provider_name"] }}</li>
-		<li><b>Role: </b>{{ agent['role'] }}</li>
-		<li><b>Instructions: </b>{{ agent["instructions"] }}</li>
-	</ul>
+<h2>Attributes</h2>
+<ul>
+    <li><b>Creator: </b>{{ agent['username'] }}</li>
+    <li><b>Name: </b>{{ agent['name'] }}</li>
+    <li><b>Model: </b>{{ agent['model_name'] }}</li>
+    <li><b>Provider: </b>{{ agent["provider_name"] }}</li>
+    <li><b>Role: </b>{{ agent['role'] }}</li>
+    <li><b>Instructions: </b>{{ agent["instructions"] }}</li>
+</ul>
+<section class="conversations">
+    <h2>Conversations</h2>
+    {% if conversations|length == 0 %}
+    <p>Empty</p>
+    {% endif %}
+    {% for conversation in conversations %}
+    <p>{{ conversation["name"] }} (Context: {{ conversation["context_name"] }} <a href="{{ url_for("contexts.view", context_id=conversation["context_id"]) }}">View</a>)</p>
+    {% endfor %}
+</section>
 <section id="contexts">
     <h2>Contexts</h2>
     {% if contexts|length == 0 %}

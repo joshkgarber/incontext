@@ -7,14 +7,14 @@ from incontext.auth import login_required
 from incontext.db import get_db, dict_factory
 
 
-bp = Blueprint('agents', __name__, url_prefix='/agents')
+bp = Blueprint("agents", __name__, url_prefix="/agents")
 
 
-@bp.route('/')
+@bp.route("/")
 @login_required
 def index():
     agents = get_agents()
-    return render_template('agents/index.html', agents=agents)
+    return render_template("agents/index.html", agents=agents)
 
 
 @bp.route('/new', methods=('GET', 'POST'))
@@ -54,8 +54,9 @@ def new():
 @login_required
 def view(agent_id):
     agent = get_agent(agent_id)
+    conversations = get_agent_conversations(agent_id)
     contexts = get_agent_contexts(agent_id)
-    return render_template('agents/view.html', agent=agent, contexts=contexts)
+    return render_template('agents/view.html', agent=agent, conversations=conversations, contexts=contexts)
 
 
 @bp.route('/<int:agent_id>/edit', methods=('GET', 'POST'))
@@ -158,10 +159,31 @@ def get_agent_contexts(agent_id, check_access=True):
             abort(403)
     db = get_db()
     contexts = db.execute(
-        "SELECT c.id, c.name, c.description FROM contexts c"
-        " JOIN context_agent_relations r"
-        " ON r.context_id = c.id"
-        " WHERE r.agent_id = ?",
+        "SELECT ctx.id, ctx.name, ctx.description"
+        " FROM contexts ctx"
+        " JOIN context_conversation_relations ccr"
+        " ON ccr.context_id = ctx.id"
+        " JOIN conversation_agent_relations car"
+        " ON car.conversation_id = ccr.conversation_id"
+        " WHERE car.agent_id = ?",
         (agent_id,)
     ).fetchall()
     return contexts
+
+
+def get_agent_conversations(agent_id, check_access=True):
+    if check_access:
+        agent_creator_id = get_agent_creator_id(agent_id)
+        if agent_creator_id != g.user['id']:
+            abort(403)
+    db = get_db()
+    conversations = db.execute(
+        "SELECT c.id, c.name, ctx.id AS context_id, ctx.name AS context_name"
+        " FROM conversations c"
+        " JOIN context_conversation_relations ccr ON ccr.conversation_id = c.id"
+        " JOIN contexts ctx ON ctx.id = ccr.context_id"
+        " JOIN conversation_agent_relations car ON car.conversation_id = c.id"
+        " WHERE car.agent_id = ?",
+        (agent_id,)
+    ).fetchall()
+    return conversations
