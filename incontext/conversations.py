@@ -104,16 +104,17 @@ def edit(conversation_id):
     return render_template("conversations/edit.html", conversation=conversation, agents=agents)
 
 
-@bp.route('/<int:id>/delete', methods=('POST',))
+@bp.route("/<int:conversation_id>/delete", methods=("POST",))
 @login_required
-def delete(id):
-    get_conversation(id)
+def delete(conversation_id):
+    get_conversation(conversation_id)
     db = get_db()
-    db.execute('DELETE FROM conversations WHERE id = ?', (id,))
-    db.execute('DELETE FROM conversation_agent_relations WHERE conversation_id = ?', (id,))
+    db.execute("DELETE FROM conversations WHERE id = ?", (conversation_id,))
+    db.execute("DELETE FROM context_conversation_relations WHERE conversation_id = ?", (conversation_id,))
+    db.execute("DELETE FROM conversation_agent_relations WHERE conversation_id = ?", (conversation_id,))
+    db.execute("DELETE FROM messages WHERE conversation_id = ?", (conversation_id,))
     db.commit()
-    delete_messages(id)
-    return redirect(url_for('conversations.index'))
+    return redirect(url_for("home.index"))
 
 
 def get_related_agent(conversation_id):
@@ -142,12 +143,6 @@ def get_conversation(conversation_id, check_creator=True):
     if check_creator and conversation["creator_id"] != g.user["id"]:
         abort(403) # 403 means Forbidden. 401 means "Unauthorized" but you redirect to the login page instead of returning that status.
     return conversation
-
-
-def delete_messages(conversation_id):
-    db = get_db()
-    db.execute('DELETE FROM messages WHERE conversation_id = ?', (conversation_id,))
-    db.commit()
 
 
 def get_credential(name):

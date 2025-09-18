@@ -350,14 +350,62 @@ def test_edit_post(app, client, auth):
 # # Cannot test get_agent_response error handling until I can spoof the model for example. I havent figured out how to use the responses library to spoof the whole openai api response. Perhaps I need to refactor the way ai responses are being requrested in order to enable using the responses library.
 # 
 # 
-# def test_delete(client, auth, app): # the delete view should should redirect to the index url and the conversation should no longer exist in the db.
-#     auth.login()
-#     response = client.post('/conversations/1/delete')
-#     assert response.headers['Location'] == '/conversations/'
-#     with app.app_context():
-#         db = get_db()
-#         conversation = db.execute('SELECT * FROM conversations WHERE id = 1').fetchone()
-#         assert conversation is None
-#         # messages whould be deleted
-#         count = db.execute('SELECT COUNT(id) FROM messages WHERE conversation_id = 1').fetchone()[0]
-#         assert count == 0
+def test_delete(client, auth, app):
+    with app.app_context():
+        # Get all tables before
+        all_tables_before = get_other_tables()
+        path = "/conversations/1/delete"
+        # User must be logged in
+        response = client.post(path)
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        # User must have access
+        auth.login("other", "other")
+        response = client.post(path)
+        assert response.status_code == 403
+        # Conversation must exist
+        auth.login()
+        response = client.post("/conversations/bogus/delete")
+        assert response.status_code == 404
+        # Data hasn't changed
+        assert get_other_tables() == all_tables_before
+        # Get affected tables before
+        db = get_db()
+        conversations_before = db.execute("SELECT * FROM conversations").fetchall()
+        context_conversation_relations_before = db.execute("SELECT * FROM context_conversation_relations").fetchall()
+        conversation_agent_relations_before = db.execute("SELECT * FROM conversation_agent_relations").fetchall()
+        messages_before = db.execute("SELECT * FROM messages").fetchall()
+        # Get other tables before
+        other_tables_before = get_other_tables(["conversations", "context_conversation_relations", "conversation_agent_relations", "messages"])
+        # Make the request
+        response = client.post(path)
+        # Redirected to home page
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/"
+        # Get affected tables after
+        conversations_after = db.execute("SELECT * FROM conversations").fetchall()
+        context_conversation_relations_after = db.execute("SELECT * FROM context_conversation_relations").fetchall()
+        conversation_agent_relations_after = db.execute("SELECT * FROM conversation_agent_relations").fetchall()
+        messages_after = db.execute("SELECT * FROM messages").fetchall()
+        # Get other tables after
+        other_tables_after = get_other_tables(["conversations", "context_conversation_relations", "conversation_agent_relations", "messages"])
+        # Other tables haven't changed
+        assert other_tables_after == other_tables_before
+        # Conversation-related data has been deleted from affected tables, others unchanged
+        for c in conversations_after:
+            assert c["id"] != 1
+            assert c in conversations_before
+        assert len(conversations_after) == len(conversations_before) - 1
+        for ccr in context_conversation_relations_after:
+            assert ccr["conversation_id"] != 1
+            assert ccr in context_conversation_relations_before
+        assert len(context_conversation_relations_after) == len(context_conversation_relations_before) - 1
+        for car in conversation_agent_relations_after:
+            assert car["conversation_id"] != 1
+            assert car in conversation_agent_relations_before
+        assert len(conversation_agent_relations_after) == len(conversation_agent_relations_before) - 1
+        for m in messages_after:
+            assert m["conversation_id"] != 1
+        conversation_messages_before = [m for m in messages_before if m["conversation_id"] == 1]
+        assert len(messages_after) == len(messages_before) - len(conversation_messages_before)
+        
