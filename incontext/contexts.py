@@ -177,6 +177,8 @@ def get_context_conversations(context_id):
         " WHERE ccr.context_id = ?",
         (context_id,)
     ).fetchall()
+    for conversation in conversations:
+        conversation["messages"] = get_messages(conversation["id"])
     return conversations
 
 
@@ -199,3 +201,17 @@ def get_unrelated_agents(context_id):
     if context_agent_ids is not None:
         agents = [agent for agent in agents if agent["id"] not in context_agent_ids]
     return agents
+
+
+def get_messages(conversation_id):
+    messages = get_db().execute(
+        'SELECT m.id, m.content, m.human, m.created'
+        ' FROM messages m'
+        ' JOIN conversations c'
+        ' ON m.conversation_id = c.id'
+        ' WHERE c.id = ?',
+        (conversation_id,)
+    ).fetchall()
+    return messages
+
+

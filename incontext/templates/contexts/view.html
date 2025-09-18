@@ -15,10 +15,24 @@
         <p>Empty</p>
         {% endif %}
         {% for conversation in conversations %}
-        <article class="conversation">
+        <article class="conversation" data-id="{{ conversation["id"] }}">
             <header><h3>{{ conversation["name"] }}</h3></header>
             <p>Agent: {{ conversation["agent_name"] }} <a href="{{ url_for("agents.view", agent_id=conversation["agent_id"]) }}">View</a></p>
             <a href="{{ url_for("conversations.edit", conversation_id=conversation["id"]) }}">Edit</a>
+            <section class="messages">
+                <h4>Messages</h2>
+                    {% if conversation["messages"]|length == 0 %}
+                    <p id="noMessages">No messages</p>
+                    {% endif %}
+                    {% for message in conversation["messages"] %}
+                    <p class="human-{{ message['human'] }}">{{ message['content'] }}</p>
+                    {% endfor %}
+            </section>
+            <form class="new-message-form">
+                <textarea name="content" required autofocus></textarea>
+                <input type="hidden" name="conversation_id" value="{{ conversation["id"] }}">
+                <input type="submit" value="Add">
+            </form>
         </article>
         {% endfor %}
     </section>
@@ -48,4 +62,77 @@
         {% endfor %}
     </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+	const forms = document.querySelectorAll("form");
+    forms.forEach((form) => {
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            new FormData(form);
+        });
+        form.addEventListener("formdata", (event) => {
+            const payload = new Object();
+            for (const entry of event.formData.entries()) {
+                payload[entry[0]] = entry[1];
+            }
+            addMessage(payload);
+        });
+	});
+
+
+	async function addMessage(payload) {
+		const resource = "{{ url_for('conversations.add_message') }}";
+		const options = {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload)
+		}
+		try {
+			const response = await fetch(resource, options);
+			if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+			checkAndRemoveNoMessagesTip(payload["conversation_id"]);
+			updateDisplay('1', payload['content'], payload["conversation_id"]);
+			agentResponse(payload["conversation_id"]);
+		}
+		catch (error) {
+			console.error(`Fetch problem: ${error.message}`);
+		}
+	}
+
+	async function agentResponse(conversationId) {
+		const resource = "{{ url_for('conversations.agent_response') }}";
+		const options = {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({"conversation_id": conversationId})
+		}
+		try {
+			const response = await fetch(resource, options);
+			if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+			const json = await response.json();
+			updateDisplay('0', json.content, conversationId);
+		}
+		catch (error) {
+			console.error(`Fetch problem: ${error.message}`);
+		}
+	}				
+
+	function updateDisplay(role, content, conversationId) {
+		const messagesSection = document.querySelector(`article.conversation[data-id='${conversationId}'] section.messages`);
+		const m = document.createElement("p");
+		m.textContent = content;
+		m.classList.add(`human-${role}`);
+		messagesSection.appendChild(m);
+		field = document.querySelector(`article.conversation[data-id='${conversationId}'] textarea`);
+		field.value = '';
+		field.focus();
+	}
+
+	function checkAndRemoveNoMessagesTip(conversationId) {
+		const noMessagesTip = document.querySelector(`article.conversation[data-id='${conversationId}'] #noMessages`);
+		if (noMessagesTip) noMessagesTip.remove();
+	}
+</script>
 {% endblock %}

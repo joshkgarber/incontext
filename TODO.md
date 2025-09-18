@@ -23,12 +23,18 @@
 - [x] Conversations/edit: You can change the name, related agent, and related context.
     - [x] Tests
 - [x] Remove creator id from context_list_relations
-- [ ] Agent view: should show related conversations with a link to the conversation and a link to the related context. also a list of all the contexts alone.
+- [x] Agent view: should show related conversations with a link to the conversation and a link to the related context. also a list of all the contexts alone.
     - [x] Code
-    - [ ] Tests
-- [ ] Full conversation usage on context view page
-    - [ ] Migrate code from the conversation view template
+    - [x] Tests
+- [x] Full conversation usage on context view page
+    - [x] Migrate code from the conversation view template
+    - [x] Try with gpt
+    - [x] Try with claude
+    - [x] Try with Gemini
+    - [x] The updatedisply and checkandremovenomessagestip need to be updated to account for conversation id.
 - [ ] You can delete a conversation, but you can't just remove it from a context. I.e. a conversation cannot exist without a context.
     - [ ] You can delete a conversation at the edit screen.
     - [ ] Tests
+- [ ] Lists are added to the conversation.
+- [ ] Generally tests for conversations
 - [ ] Make it work. Don't worry about the code being good or fast at this stage.

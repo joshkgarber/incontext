@@ -5,7 +5,7 @@ from werkzeug.exceptions import abort
 
 from incontext.auth import login_required
 from incontext.db import get_db
-from incontext.contexts import get_context
+from incontext.contexts import get_context, get_messages
 from incontext.agents import get_agents
 from incontext.agents import get_agent
 from openai import OpenAI
@@ -144,18 +144,6 @@ def get_conversation(conversation_id, check_creator=True):
     return conversation
 
 
-def get_messages(conversation_id):
-    messages = get_db().execute(
-        'SELECT m.id, m.content, m.human, m.created, c.creator_id'
-        ' FROM messages m'
-        ' JOIN conversations c'
-        ' ON m.conversation_id = c.id'
-        ' WHERE c.id = ?',
-        (conversation_id,)
-    ).fetchall()
-    return messages
-
-
 def delete_messages(conversation_id):
     db = get_db()
     db.execute('DELETE FROM messages WHERE conversation_id = ?', (conversation_id,))
@@ -184,7 +172,7 @@ def get_openai_response(conversation_history, agent):
     client = OpenAI(api_key=openai_api_key)
     try:
         response = client.responses.create(
-            model=agent['model'],
+            model=agent['model_code'],
             input=conversation_history
         )
         return dict(success=True, content=response.output_text)
@@ -203,7 +191,7 @@ def get_anthropic_response(conversation_history, agent):
     client = anthropic.Anthropic(api_key=anthropic_api_key)
     try:
         response = client.messages.create(
-            model=agent['model'],
+            model=agent['model_code'],
             max_tokens=1024,
             system=f'You are a {agent["role"]}.',
             messages=conversation_history
@@ -217,7 +205,7 @@ def get_google_response(conversation_history, agent):
     google_api_key = get_credential('GEMINI_API_KEY')
     client = genai.Client(api_key=google_api_key)
     chat = client.chats.create(
-        model=agent['model'],
+        model=agent['model_code'],
         config=types.GenerateContentConfig(
             system_instruction=f'You are a {agent["role"]}. {agent["instructions"]}'
         ),
@@ -232,38 +220,39 @@ def get_google_response(conversation_history, agent):
 
 def get_agent_response(cid):
     agent_id = get_db().execute(
-        'SELECT r.agent_id FROM conversation_agent_relations r'
-        ' JOIN conversations c ON r.conversation_id = c.id'
-        ' WHERE r.conversation_id = ?',
+        "SELECT r.agent_id"
+        " FROM conversation_agent_relations r"
+        " JOIN conversations c ON r.conversation_id = c.id"
+        " WHERE r.conversation_id = ?",
         (cid,)
     ).fetchone()['agent_id']
     agent = get_agent(agent_id)
-    vendor = agent['vendor']
-    agent_conversation_role = 'model' if vendor == 'google' else 'assistant'
+    provider = agent['provider_code']
+    agent_conversation_role = 'model' if provider == 'google' else 'assistant'
     conversation_history = []
     messages = get_messages(cid)
     for message in messages:
         human = message['human']
         role = 'user' if human == 1 else agent_conversation_role
         content = message['content']
-        if vendor == 'google':
+        if provider == 'google':
             parts = [{'text': content}]
             conversation_history.append(dict(role=role, parts=parts))
         else:
             conversation_history.append(dict(role=role, content=content))
-    if vendor == 'openai':
+    if provider == 'openai':
         return get_openai_response(conversation_history, agent)
-    elif vendor == 'anthropic':
+    elif provider == 'anthropic':
         return get_anthropic_response(conversation_history, agent)
     else:
-        print(conversation_history)
         return get_google_response(conversation_history, agent)
 
     
-@bp.route('/<int:conversation_id>/add-message', methods=('POST',))
+@bp.route('/add-message', methods=('POST',))
 @login_required
-def add_message(conversation_id):
-    conversation = get_conversation(conversation_id) # To check the creator
+def add_message():
+    conversation_id = request.json["conversation_id"]
+    conversation = get_conversation(conversation_id) # To check access
     message_content = request.json['content']
     error = None
 
@@ -283,10 +272,11 @@ def add_message(conversation_id):
         return '', 200
 
 
-@bp.route('/<int:conversation_id>/agent-response', methods=('POST',))
+@bp.route('/agent-response', methods=('POST',))
 @login_required
-def agent_response(conversation_id):
-    conversation = get_conversation(conversation_id) # To check the creator
+def agent_response():
+    conversation_id = request.json["conversation_id"]
+    conversation = get_conversation(conversation_id) # To check access
     agent_response = get_agent_response(conversation_id)
     if agent_response['success']:
         db = get_db()
