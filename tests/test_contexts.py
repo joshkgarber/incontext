@@ -151,6 +151,17 @@ def test_view(client, auth, app):
                 assert conversation["name"].encode() not in response.data
                 if conversation["agent_name"] != agent_name:
                     assert conversation["agent_name"].encode() not in response.data
+        # Serve messages for conversations in this context, not others
+        messages = db.execute(
+            "SELECT m.content, ccr.context_id FROM messages m"
+            " JOIN context_conversation_relations ccr"
+            " ON ccr.conversation_id = m.conversation_id"
+        ).fetchall()
+        for message in messages:
+            if message["context_id"] == 1:
+                assert message["content"].encode() in response.data
+            else:
+                assert message["content"].encode() not in response.data
        
 
 def test_edit_get(client, auth, app):

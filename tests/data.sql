@@ -111,9 +111,15 @@ VALUES
 
 INSERT INTO messages (conversation_id, content, human)
 VALUES
-	(1, 'This is a test.', 1),
-	(1, 'Working', 0),
-	(1, 'This is a test.', 1);
+	(1, 'message content 1', 1),
+	(1, 'message content 2', 0),
+	(1, 'message content 3', 1),
+	(2, 'message content 4', 1),
+	(2, 'message content 5', 0),
+	(2, 'message content 6', 1),
+	(3, 'message content 7', 1),
+	(3, 'message content 8', 0),
+	(3, 'message content 9', 1);
 
 
 INSERT INTO conversation_agent_relations (conversation_id, agent_id)

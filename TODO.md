@@ -26,15 +26,17 @@
 - [x] Agent view: should show related conversations with a link to the conversation and a link to the related context. also a list of all the contexts alone.
     - [x] Code
     - [x] Tests
-- [x] Full conversation usage on context view page
+- [ ] Full conversation usage on context view page
     - [x] Migrate code from the conversation view template
     - [x] Try with gpt
     - [x] Try with claude
     - [x] Try with Gemini
     - [x] The updatedisply and checkandremovenomessagestip need to be updated to account for conversation id.
+    - [ ] Test: Conversation and messages showing on context view
 - [ ] You can delete a conversation, but you can't just remove it from a context. I.e. a conversation cannot exist without a context.
     - [ ] You can delete a conversation at the edit screen.
     - [ ] Tests
 - [ ] Lists are added to the conversation.
+    - [ ] Payload for LLMs are being created correctly
 - [ ] Generally tests for conversations
 - [ ] Make it work. Don't worry about the code being good or fast at this stage.
