@@ -8,11 +8,13 @@ from incontext.db import get_db
 from incontext.contexts import get_context, get_messages
 from incontext.agents import get_agents
 from incontext.agents import get_agent
+from incontext.lists import get_list_with_items_and_details, get_list_details, get_list_items
 from openai import OpenAI
 import anthropic
 from google import genai
 from google.genai import types
 import os
+import json
 
 
 bp = Blueprint('conversations', __name__, url_prefix='/conversations')
@@ -159,7 +161,7 @@ def get_credential(name):
 def get_openai_response(conversation_history, agent):
     conversation_history = [
         dict(
-            role='system',
+            role='developer',
             content=f'You are a {agent["role"]}. {agent["instructions"]}',
         )
     ] + conversation_history
@@ -223,9 +225,15 @@ def get_agent_response(cid):
     ).fetchone()['agent_id']
     agent = get_agent(agent_id)
     provider = agent['provider_code']
-    agent_conversation_role = 'model' if provider == 'google' else 'assistant'
+    agent_conversation_role = "model" if provider == "google" else "assistant"
     conversation_history = []
     messages = get_messages(cid)
+    context_json = get_context_json(cid)
+    context_message = [{
+        "human": 1,
+        "content": f"Contextual info: {context_json}"
+    }]
+    messages = context_message + messages
     for message in messages:
         human = message['human']
         role = 'user' if human == 1 else agent_conversation_role
@@ -243,28 +251,26 @@ def get_agent_response(cid):
         return get_google_response(conversation_history, agent)
 
     
-@bp.route('/add-message', methods=('POST',))
+@bp.route("/add-message", methods=("POST",))
 @login_required
 def add_message():
     conversation_id = request.json["conversation_id"]
     conversation = get_conversation(conversation_id) # To check access
-    message_content = request.json['content']
+    message_content = request.json["content"]
     error = None
-
     if not message_content:
-        error = 'Message can\'t be empty.'
-
+        error = "Message can't be empty."
     if error is not None:
         return error, 400
     else:
         db = get_db()
         db.execute(
-            'INSERT INTO messages (conversation_id, content, human)'
-            ' VALUES (?, ?, ?)',
+            "INSERT INTO messages (conversation_id, content, human)"
+            " VALUES (?, ?, ?)",
             (conversation_id, message_content, 1,)
         )
         db.commit()
-        return '', 200
+        return "", 200
 
 
 @bp.route('/agent-response', methods=('POST',))
@@ -285,3 +291,28 @@ def agent_response():
     else:
         # print(agent_response['content']) # Log the error
         return {'content': f'An error occurred in get_agent_response: {agent_response["content"]}'}, 200
+
+
+def get_context_json(conversation_id):
+    # Get lists with items and details
+    db = get_db()
+    context_id = db.execute("SELECT context_id FROM context_conversation_relations WHERE conversation_id = ?", (conversation_id,)).fetchone()["context_id"]
+    context = db.execute(
+        "SELECT l.id, l.name, l.description FROM lists l"
+        " JOIN context_list_relations clr ON clr.list_id = l.id"
+        " WHERE clr.context_id = ?",
+        (context_id,)
+    ).fetchall()
+    for alist in context:
+        alist["details"] = get_list_details(alist["id"], False)
+    for alist in context:
+        alist["items"] = get_list_items(alist["id"], False)
+        for item in alist["items"]:
+            item["created"] = item["created"].strftime("%Y-%m-%d")
+            for detail in alist["details"]:
+                item[detail["name"]] = db.execute(
+                    "SELECT content FROM item_detail_relations"
+                    " WHERE item_id = ? AND detail_id = ?",
+                    (item["id"], detail["id"])
+                ).fetchone()["content"]
+    return json.dumps(context)

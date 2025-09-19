@@ -96,9 +96,9 @@ VALUES
 
 INSERT INTO agents (creator_id, name, description, model_id, role, instructions)
 VALUES
-	(2, "agent name 1", "agent description 1", 3, "agent role 1", "agent instructions 1"),
+	(2, "agent name 1", "agent description 1", 9, "agent role 1", "agent instructions 1"),
 	(2, "agent name 2", "agent description 2", 6, "agent role 2", "agent instructions 2"),
-	(3, "agent name 3", "agent description 3", 9, "agent role 3", "agent instructions 3"),
+	(3, "agent name 3", "agent description 3", 3, "agent role 3", "agent instructions 3"),
 	(2, "agent name 4", "agent description 4", 5, "agent role 4", "agent instructions 4");
 
 
@@ -114,12 +114,12 @@ VALUES
 	(1, 'message content 1', 1),
 	(1, 'message content 2', 0),
 	(1, 'message content 3', 1),
-	(2, 'message content 4', 1),
-	(2, 'message content 5', 0),
-	(2, 'message content 6', 1),
-	(3, 'message content 7', 1),
-	(3, 'message content 8', 0),
-	(3, 'message content 9', 1);
+	(2, 'message content 5', 1),
+	(2, 'message content 6', 0),
+	(2, 'message content 7', 1),
+	(3, 'message content 8', 1),
+	(3, 'message content 9', 0),
+	(3, 'message content 10', 1);
 
 
 INSERT INTO conversation_agent_relations (conversation_id, agent_id)

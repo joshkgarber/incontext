@@ -36,8 +36,13 @@
 - [x] You can delete a conversation, but you can't just remove it from a context. I.e. a conversation cannot exist without a context.
     - [x] You can delete a conversation at the edit screen.
     - [x] Tests
-- [ ] Lists are added to the conversation.
-    - [ ] Payload for LLMs are being created correctly
+- [x] Lists are added to the conversation.
+    - [x] Use JSON for lists
+    - [x] OpenAI system role is called "developer"
+    - [x] Payload for LLMs are being created correctly
+    - [x] Tests
+        - [x] new message
+        - [x] new agent response
 - [ ] Generally tests for conversations
     - [ ] Deleting a context deletes the conversations and messages
         - [ ] Tests

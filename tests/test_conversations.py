@@ -277,79 +277,85 @@ def test_edit_post(app, client, auth):
         assert len(conversation_agent_relations_after) == len(conversation_agent_relations_before)
 
 
+def test_add_message(app, client, auth):
+    with app.app_context():
+        # Get all tables before
+        all_tables_before = get_other_tables()
+        # User must be logged in
+        path = "/conversations/add-message"
+        json = dict(conversation_id="1", content="")
+        response = client.post(path, json=json)
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        # User must have access
+        auth.login("other", "other")
+        response = client.post(path, json=json)
+        assert response.status_code == 403
+        # Conversation must exist
+        auth.login()
+        json["conversation_id"] = "bogus"
+        response = client.post(path, json=json)
+        assert response.status_code == 404
+        # Data validation
+        json["conversation_id"] = "1"
+        response = client.post(path, json=json)
+        assert b"Message can't be empty." in response.data
+        # Data is unchanged after all that
+        assert get_other_tables() == all_tables_before
+        # Get affected tables before
+        db = get_db()
+        messages_before = db.execute("SELECT * FROM messages").fetchall()
+        # Get other tables before
+        other_tables_before = get_other_tables(["messages"])
+        # Make the request
+        json["content"] = "new message"
+        response = client.post(path, json=json)
+        assert response.status_code == 200
+        assert get_other_tables(["messages"]) == other_tables_before
+        messages_after = db.execute("SELECT * FROM messages").fetchall()
+        new_messages = [message for message in messages_after if message["content"] == "new message"]
+        assert len(new_messages) == 1
+        new_message = new_messages[0]
+        for message in messages_after:
+            if message != new_message:
+                assert message in messages_before
+        assert len(messages_after) == len(messages_before) + 1
+
  
-# def test_edit(client, auth, app):
-#     auth.login()
-#     assert client.get('conversations/1/update').status_code == 200
-#     
-#     client.post('/conversations/1/update', data={'name': 'Test Updated', 'agent': 2})
-# 
-#     with app.app_context():
-#         db = get_db()
-#         conversation = db.execute('SELECT * FROM conversations WHERE id = 1').fetchone()
-#         assert conversation['name'] == 'Test Updated'
-#         relation = db.execute('SELECT * FROM conversation_agent_relations WHERE conversation_id = 1').fetchone()
-#         assert relation['agent_id'] == 2
-# 
+def test_agent_response(app, client, auth):
+    with app.app_context():
+        json = dict(conversation_id="1")
+        path = "/conversations/agent-response"
+        all_tables_before = get_other_tables()
+        response = client.post(path, json=json)
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        auth.login("other", "other")
+        response = client.post(path, json=json)
+        assert response.status_code == 403
+        json["conversation_id"] = "bogus"
+        response = client.post(path, json=json)
+        assert response.status_code == 404
+        json["conversation_id"] = "1"
+        auth.login()
+        db = get_db()
+        messages_before = db.execute("SELECT * FROM messages").fetchall()
+        other_tables_before = get_other_tables(["messages"])
+        response = client.post(path, json=json)
+        assert response.status_code == 200
+        assert get_other_tables(["messages"]) == other_tables_before
+        messages_after = db.execute("SELECT * FROM messages").fetchall()
+        agent_content = response.json["content"]
+        new_messages  = [m for m in messages_after if m["content"] == agent_content]
+        assert len(new_messages) == 1
+        new_message = new_messages[0]
+        for message in messages_after:
+            if message == new_message:
+                assert message not in messages_before
+            else:
+                assert message in messages_before
 
-# 
-# def test_add_message(client, auth, app):
-#     auth.login()
-#     response = client.post('/conversations/1/add-message', json={'content': 'hello'})
-#     assert response.status_code == 200
-#     with app.app_context():
-#         db = get_db()
-#         count = db.execute('SELECT COUNT(id) FROM messages').fetchone()[0]
-#         assert count == 4
-# 
-
-# def test_agent_response(client, auth, app):
-#     auth.login()
-#     response = client.post('/conversations/1/agent-response')
-#     assert response.status_code == 200
-#     assert response.json == {'content': 'Working'}
-#     with app.app_context():
-#         db = get_db()
-#         count = db.execute('SELECT COUNT(id) FROM messages').fetchone()[0]
-#         assert count == 4
-#         db.execute('UPDATE agents SET instructions = ? WHERE id = 1', ('Reply with one word: "Successful"',))
-#         db.execute('UPDATE messages SET content = ? WHERE human = 0', ('Successful',))
-#         db.execute('DELETE FROM messages WHERE id > 3')
-#         db.commit()
-#     response = client.post('/conversations/1/agent-response')
-#     assert response.status_code == 200
-#     assert response.json == {'content': 'Successful'}
-#     with app.app_context():
-#         db = get_db()
-#         count = db.execute('SELECT COUNT(id) FROM messages').fetchone()[0]
-#         assert count == 4
-#         db.execute('UPDATE agents SET vendor = ?, model = ? WHERE id = 1', ('anthropic', 'claude-3-5-haiku-latest'))
-#         db.execute('DELETE FROM messages WHERE id > 3')
-#         db.commit()
-#     response = client.post('/conversations/1/agent-response')
-#     assert response.status_code == 200
-#     assert response.json == {'content': 'Successful'}
-#     with app.app_context():
-#         db = get_db()
-#         count = db.execute('SELECT COUNT(id) FROM messages').fetchone()[0]
-#         assert count == 4
-#         db.execute('UPDATE agents SET vendor = ?, model = ? WHERE id = 1', ('google', 'gemini-1.5-flash-8b'))
-#         db.execute('DELETE FROM messages WHERE id > 3')
-#         db.commit()
-#     response = client.post('/conversations/1/agent-response')
-#     assert response.status_code == 200
-#     response_content = response.json['content']
-#     clean_response_content = ''.join(e for e in response_content if e.isalnum())
-#     assert clean_response_content == 'Successful'
-#     with app.app_context():
-#         db = get_db()
-#         count = db.execute('SELECT COUNT(id) FROM messages').fetchone()[0]
-#         assert count == 4
-# 
-# 
-# # Cannot test get_agent_response error handling until I can spoof the model for example. I havent figured out how to use the responses library to spoof the whole openai api response. Perhaps I need to refactor the way ai responses are being requrested in order to enable using the responses library.
-# 
-# 
+ 
 def test_delete(client, auth, app):
     with app.app_context():
         # Get all tables before

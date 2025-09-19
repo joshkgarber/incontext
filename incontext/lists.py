@@ -309,19 +309,18 @@ def get_user_lists():
 
 def get_list(list_id, check_creator=True):
     db = get_db()
-    db.row_factory = dict_factory
+    if check_creator:
+        list_creator_id = get_list_creator_id(list_id)
+        if list_creator_id is None:
+            abort(404)
+        if list_creator_id != g.user['id']:
+            abort(403)
     alist = get_db().execute(
         'SELECT id, name, description, creator_id'
         ' FROM lists'
         ' WHERE id = ?',
         (list_id,)
     ).fetchone()
-    if alist is None:
-        abort(404)
-    if check_creator:
-        list_creator_id = alist['creator_id']
-        if list_creator_id != g.user['id']:
-            abort(403)
     return alist
 
 
@@ -347,7 +346,7 @@ def get_list_with_items_and_details(list_id, check_creator=True):
         item["relations"] = []
         for detail in details:
             item_detail_relation = db.execute(
-                "SELECT d.id, d.name, r.content"
+                "SELECT d.name, r.content"
                 " FROM details d JOIN item_detail_relations r"
                 " ON d.id = r.detail_id"
                 " WHERE d.id = ?"
@@ -399,13 +398,15 @@ def get_list_item(list_id, item_id, check_relation=True):
 
 
 def get_list_creator_id(list_id):
-    creator_id = get_db().execute(
+    alist = get_db().execute(
         'SELECT l.creator_id'
         ' FROM lists l'
         ' WHERE l.id = ?',
         (list_id,)
-    ).fetchone()['creator_id']
-    return creator_id
+    ).fetchone()
+    if alist:
+        return alist['creator_id']
+    return None
 
 
 def get_item_list_id(item_id):
