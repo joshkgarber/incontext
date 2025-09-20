@@ -43,7 +43,9 @@
     - [x] Tests
         - [x] new message
         - [x] new agent response
-- [ ] Generally tests for conversations
-    - [ ] Deleting a context deletes the conversations and messages
-        - [ ] Tests
+- [ ] Test lists are added to conversation_history properly
+- [ ] Deleting a context deletes the conversations and messages
+    - [ ] Tests
+- [ ] Coverage report
+- [ ] Deploy
 - [ ] Make it work. Don't worry about the code being good or fast at this stage.
